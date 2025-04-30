@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mynia_Boutique</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #f0f0f0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+        }
+        
+        /* Formes géométriques déformées */
+        .shape-1 {
+            position: absolute;
+            top: -150px;
+            right: -100px;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(45deg, #1e3799, #0a3d62);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            transform: rotate(-15deg) skew(5deg, 10deg);
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .shape-2 {
+            position: absolute;
+            bottom: 100px;
+            left: -200px;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #0a3d62, #1e3799);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            opacity: 0.2;
+            z-index: -1;
+        }
+        
+        .shape-3 {
+            position: fixed;
+            top: 50%;
+            right: 10%;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(225deg, #0a3d62, #1e3799);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            transform: rotate(45deg) skew(-10deg, 20deg);
+            opacity: 0.15;
+            z-index: -1;
+            animation: float 15s ease-in-out infinite;
+        }
+        .shape-4 {
+            position: fixed;
+            top: 50%;
+            right: 10%;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(225deg, #0a3d62, #1e3799);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            transform: rotate(45deg) skew(-10deg, 20deg);
+            opacity: 0.15;
+            z-index: -1;
+            animation: float 15s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: rotate(45deg) skew(-10deg, 20deg) translate(0, 0); }
+            50% { transform: rotate(48deg) skew(-15deg, 15deg) translate(20px, -20px); }
+            100% { transform: rotate(45deg) skew(-10deg, 20deg) translate(0, 0); }
+        }
+        
+        /* Header */
+        header {
+            padding: 20px 0;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            color: #fff;
+            text-decoration: none;
+            position: relative;
+        }
+        
+        .logo::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 40%;
+            height: 3px;
+            background: #3498db;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-menu li {
+            margin-left: 30px;
+        }
+        
+        .nav-menu a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            padding: 5px 0;
+            transition: color 0.3s;
+        }
+        
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            height: 2px;
+            background: #3498db;
+            transition: width 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            color: #3498db;
+        }
+        
+        .nav-menu a:hover::after {
+            width: 100%;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 22px;
+            margin-left: 25px;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s;
+        }
+        
+        .icon-btn:hover {
+            color: #3498db;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #3498db;
+            color: #fff;
+            font-size: 12px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Dropdown menu */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #161616;
+            min-width: 200px;
+            border-radius: 5px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .dropdown-item {
+            display: block;
+            padding: 12px 20px;
+            color: #fff;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .dropdown-item:hover {
+            background: #0f0f0f;
+            color: #3498db;
+        }
+        
+        .nav-item.dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        /* Popover style */
+        .popover {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #161616;
+            min-width: 300px;
+            border-radius: 5px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            display: none;
+            z-index: 100;
+        }
+        
+        .popover h5 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #3498db;
+        }
+        
+        .popover-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .popover .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3498db;
+            color: #000;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            border-radius: 5px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        
+        .popover .btn:hover {
+            background: #2980b9;
+        }
+        
+        .cart-icon {
+            position: relative;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: #0a0a0a;
+            padding: 80px 0 30px;
+            position: relative;
+            margin-top: 100px;
+        }
+        
+        .footer-shape {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: #0f0f0f;
+            clip-path: polygon(0 0, 100% 100%, 100% 0);
+            z-index: 1;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 50px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .footer-col h4 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .footer-col h4::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 40px;
+            height: 3px;
+            background: #3498db;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 15px;
+        }
+        
+        .footer-links a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #3498db;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 50px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        /* ====================== */
+/* FORMULAIRES AUTH */
+/* ====================== */
+        .auth-form {
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #161616;
+            border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .auth-form h2 {
+             margin-bottom: 1.5rem;
+             text-align: center;
+             color: #3498db;
+        }
+
+        .auth-form .btn {
+             width: 100%;
+             margin-top: 1rem;
+             padding: 12px;
+             background: #3498db;
+             color: #000;
+             border: none;
+             border-radius: 5px;
+             font-weight: 600;
+             cursor: pointer;
+             transition: background 0.3s;
+        }
+
+        .auth-form .btn:hover {
+            background: #2980b9;
+        }
+
+        .auth-form a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .auth-form p {
+            text-align: center;
+         margin-top: 1.5rem;
+         color: #ccc;
+        }
+        /* Responsive */
+        @media (max-width: 992px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: #0a0a0a;
+                padding: 20px;
+                flex-direction: column;
+                z-index: 100;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .nav-menu li {
+                margin: 10px 0;
+            }
+            
+            .navbar-toggler {
+                display: block;
+            }
+            
+            .dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                background: transparent;
+                padding-left: 20px;
+                display: none;
+            }
+            
+            .nav-item.dropdown.active .dropdown-menu {
+                display: block;
+            }
+            /* Style pour le dropdown du profil */
+            .dropdown {
+                 position: relative;
+                display: inline-block;
+            }
+
+            .dropdown:hover .dropdown-menu {
+                    display: block;
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateY(0);
+            }
+
+/* Icône cœur pour les favoris */
+            .icon-btn[href*="favorites"] {
+             font-size: 20px;
+             color: #ff6b6b;
+        }
+
+            .icon-btn[href*="favorites"]:hover {
+                color: #ff3b3b;
+        }
+        }
+        
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 24px;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Formes géométriques déformées -->
+    <div class="shape-1" >
+        <img src="https://img.freepik.com/photos-gratuite/surpris-ludique-touche-belle-femme-afro-americaine-lunettes-elegant-t-shirt-marron-serrant-mains-souriant-joie-excitation-aimant-grand-spectacle_176420-23322.jpg?ga=GA1.1.1265221452.1738229333&semt=ais_hybrid&w=740" alt="">
+    </div>
+    <div class="shape-2">
+        <img src="https://img.freepik.com/photos-gratuite/sculpture-masques-decoratifs-bois-fabriques-main_23-2151003076.jpg?ga=GA1.1.1265221452.1738229333&semt=ais_hybrid&w=740" alt="">
+    </div>
+    <div class="shape-3">
+        <img src="https://img.freepik.com/photos-gratuite/vue-rapprochee-main-portant-chaines_23-2151693717.jpg?ga=GA1.1.1265221452.1738229333&semt=ais_hybrid&w=740" alt="">
+    </div>
+    <div class="shape-4">
+        <img src="https://i.pinimg.com/736x/b7/31/b6/b731b652cede26f68d842799c98ce2eb.jpg" alt="">
+    </div>
+
+    <header>
+        <div class="container">
+            <div class="header-inner">
+                <a class="logo" href="{% url 'home' %}">MyniaShop</a>
+                
+                <ul class="nav-menu">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'home' %}">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'products' %}">Produits</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink">
+                            Catégories
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            {% for category in categories %}
+                                <a class="dropdown-item" href="{% url 'products' %}?category={{ category.id }}">
+                                    {{ category.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </li>
+                </ul>
+                
+                <div class="user-actions">
+                    <button class="icon-btn" id="search-btn">🔍</button>
+                    
+                    {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="icon-btn" id="user-btn">
+                            {% if user.is_authenticated and user.profile.profile_pic %}
+                                <a href="{% url 'profile' %}" class="icon-btn" id="profile-btn",style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" >👤</a>
+                            {% else %}
+                                👤
+                            {% endif %}
+                        </button>
+                        <div class="dropdown-menu">
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'profile' %}" class="dropdown-item">Mon profil</a>
+                                <a href="{% url 'favorites' %}" class="dropdown-item">Mes favoris</a>
+                                <a href="{% url 'logout' %}" class="dropdown-item">Déconnexion</a>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="dropdown-item">Connexion</a>
+                                <a href="{% url 'register' %}" class="dropdown-item">Inscription</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'profile' %}" class="icon-btn" id="profile-btn">👤</a>
+                    {% endif %}
+                    
+                    <a href="{% url 'favorites' %}" class="icon-btn">❤️</a>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-shape"></div>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h4>Mynia_Boutique</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">À propos</a></li>
+                        <li><a href="#">Notre vision</a></li>
+                        <li><a href="#">Collaborations</a></li>
+                        <li><a href="#">Carrières</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Aide</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Livraison</a></li>
+                        <li><a href="#">Retours</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Collections</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Nouveautés</a></li>
+                        <li><a href="#">Éditions limitées</a></li>
+                        <li><a href="#">Bestsellers</a></li>
+                        <li><a href="#">Soldes</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Suivez-nous</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Facebook</a></li>
+                        <li><a href="#">Instagram</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">TikTok</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2025 Mynia_Boutique. Tous droits réservés.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Script pour gérer l'affichage du panier
+        $(document).ready(function() {
+            $('#panier').click(function(e) {
+                e.stopPropagation();
+                $('#cart-popover').toggle();
+            });
+            
+            $(document).click(function(e) {
+                if (!$(e.target).closest('#cart-popover').length && !$(e.target).closest('#panier').length) {
+                    $('#cart-popover').hide();
+                }
+            });
+            
+            // Initialiser le panier depuis localStorage
+            var Panier = {};
+            if (localStorage.getItem('Panier')) {
+                Panier = JSON.parse(localStorage.getItem('Panier'));
+                // Mettre à jour le compteur du panier
+                $('#panier .cart-count').text(Object.keys(Panier).length);
+            }
+            
+            // Afficher le contenu du panier
+            AfficherList(Panier);
+        });
+        
+        // Fonction pour afficher le contenu du panier
+        function AfficherList(Panier) {
+            var PanierString = "";
+            PanierString += "<h5>Votre Panier</h5>";
+            var index = 1;
+            
+            for (var x in Panier) {
+                var element = document.getElementById("aa" + x);
+                if (element) {
+                    PanierString += "<div class='popover-item'>" + index + ". " + element.innerHTML + 
+                        " <span>Qté: " + Panier[x][0] + 
+                        " <button class='qty-btn' data-id='" + x + "' data-action='plus'>+</button>" +
+                        " <button class='qty-btn' data-id='" + x + "' data-action='minus'>-</button></span></div>";
+                    index += 1;
+                }
+            }
+            
+            PanierString += "<a href='/checkout' class='btn'>Checkout</a>";
+            
+            // Mettre à jour le contenu du popover
+            $('#cart-popover').html(PanierString);
+            
+            // Ajouter les événements pour les boutons + et -
+            $('.qty-btn').click(function() {
+                var itemId = $(this).data('id');
+                var action = $(this).data('action');
+                var Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+                
+                if (action === 'plus') {
+                    Panier[itemId][0] += 1;
+                    Panier[itemId][2] += parseFloat(document.getElementById("price"+itemId).getAttribute('data-price'));
+                } else if (action === 'minus') {
+                    if (Panier[itemId][0] > 1) {
+                        Panier[itemId][0] -= 1;
+                        Panier[itemId][2] -= parseFloat(document.getElementById("price"+itemId).getAttribute('data-price'));
+                    } else {
+                        delete Panier[itemId];
+                    }
+                }
+                
+                localStorage.setItem('Panier', JSON.stringify(Panier));
+                $('#panier .cart-count').text(Object.keys(Panier).length);
+                AfficherList(Panier);
+            });
+        }
+
+
+        // Gestion du dropdown utilisateur
+    $(document).ready(function() {
+    // Dropdown au clic (mobile)
+    $('#user-btn').click(function(e) {
+        if (window.innerWidth < 992) {
+            e.preventDefault();
+            $(this).next('.dropdown-menu').toggle();
+        }
+    });
+    
+    // Fermeture en cliquant ailleurs
+    $(document).click(function(e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown-menu').hide();
+        }
+        });
+    });
+    
+    // ======================
+// GESTION AUTHENTIFICATION
+// ======================
+    $(document).ready(function() {
+    // Redirection après login
+        const urlParams = new URLSearchParams(window.location.search);
+        const nextUrl = urlParams.get('next');
+        if (nextUrl) {
+        localStorage.setItem('nextUrl', nextUrl);
+                     }
+
+    // Gestion checkout non connecté
+    $('.checkout-btn').click(function(e) {
+        if (!document.body.classList.contains('user-authenticated')) {
+            e.preventDefault();
+            const loginUrl = "{% url 'login' %}";
+            const checkoutUrl = "{% url 'checkout' %}";
+            window.location.href = `${loginUrl}?next=${checkoutUrl}`;
+        }
+    });
+    });
+
+    // Après connexion réussie
+    if (localStorage.getItem('nextUrl')) {
+         window.location.href = localStorage.getItem('nextUrl');
+        localStorage.removeItem('nextUrl');
+            }
+</script>
+    
+    {% block js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-container" style="max-width: 500px; margin: 2rem auto; padding: 2rem; background: #161616; border-radius: 8px;">
+    <h2 style="text-align: center; margin-bottom: 1.5rem;">Connexion</h2>
+   
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert" style="color: #e74c3c; margin-bottom: 1rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endif %}
+   
+    <form method="post" action="{% url 'login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" style="display: flex; flex-direction: column; gap: 1rem;">
+        {% csrf_token %}
+        
+        {% if request.GET.next %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
+       
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Nom d'utilisateur</label>
+            {{ form.username }}
+        </div>
+       
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Mot de passe</label>
+            {{ form.password }}
+        </div>
+       
+        <button type="submit" class="btn" style="width: 100%; padding: 12px; background: #3498db; color: #000; border: none; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
+            Se connecter
+        </button>
+    </form>
+   
+    <p style="text-align: center; margin-top: 1.5rem;">
+        Pas encore de compte?
+        <a href="{% url 'register' %}" style="color: #3498db; text-decoration: none;">S'inscrire</a>
+    </p>
+</div>
+{% endblock %}

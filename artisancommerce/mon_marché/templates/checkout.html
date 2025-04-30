@@ -1,0 +1,1065 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="checkout-container">
+    <h1 class="page-title">Finaliser la commande</h1>
+    
+    <div class="checkout-content">
+        <div class="cart-summary">
+            <h2>Résumé de votre panier</h2>
+            <div class="cart-items" id="checkout-items">
+                <!-- Cart items will be loaded dynamically -->
+            </div>
+            
+            <div class="cart-totals">
+                <div class="subtotal">
+                    <span>Sous-total:</span>
+                    <span id="subtotal">0 FCFA</span>
+                </div>
+                <div class="shipping">
+                    <span>Frais de livraison:</span>
+                    <span>2000 FCFA</span>
+                </div>
+                <div class="total">
+                    <span>Total:</span>
+                    <span id="total">2000 FCFA</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="checkout-steps">
+            <div class="step active" id="step-login">
+                <h3>1. Compte</h3>
+                <div class="step-content">
+                    {% if user.is_authenticated %}
+                        <div class="user-info">
+                            <p>Connecté en tant que: <strong>{{ user.get_full_name }}</strong></p>
+                            <p>Email: {{ user.email }}</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showStep('step-shipping')">Continuer</button>
+                    {% else %}
+                        <div class="login-options">
+                            <div class="tab-headers">
+                                <div class="tab-header active" onclick="showTab('login')">Connexion</div>
+                                <div class="tab-header" onclick="showTab('register')">Inscription</div>
+                            </div>
+                            
+                            <div class="tab-content active" id="login">
+                                <form action="{% url 'login' %}" method="post" class="login-form">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="login-email">Email</label>
+                                        <input type="email" id="login-email" name="email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="login-password">Mot de passe</label>
+                                        <input type="password" id="login-password" name="password" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Se connecter</button>
+                                </form>
+                                <p class="mt-3">OU</p>
+                                <button class="btn btn-secondary" onclick="proceedAsGuest()">Continuer en tant qu'invité</button>
+                            </div>
+                            
+                            <div class="tab-content" id="register">
+                                <form action="{% url 'register' %}" method="post" class="register-form" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="register-first-name">Prénom</label>
+                                            <input type="text" id="register-first-name" name="first_name" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="register-last-name">Nom</label>
+                                            <input type="text" id="register-last-name" name="last_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="register-phone">Numéro de téléphone</label>
+                                        <input type="tel" id="register-phone" name="phone" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="register-email">Email</label>
+                                        <input type="email" id="register-email" name="email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="register-password">Mot de passe</label>
+                                        <input type="password" id="register-password" name="password" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="register-password-confirm">Confirmer le mot de passe</label>
+                                        <input type="password" id="register-password-confirm" name="password_confirm" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="register-profile-pic">Photo de profil (facultatif)</label>
+                                        <input type="file" id="register-profile-pic" name="profile_pic">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">S'inscrire</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="step" id="step-shipping">
+                <h3>2. Adresse de livraison</h3>
+                <div class="step-content">
+                    <form id="shipping-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping-first-name">Prénom</label>
+                                <input type="text" id="shipping-first-name" name="shipping-first-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shipping-last-name">Nom</label>
+                                <input type="text" id="shipping-last-name" name="shipping-last-name" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipping-address">Adresse</label>
+                            <input type="text" id="shipping-address" name="shipping-address" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="shipping-city">Ville</label>
+                                <input type="text" id="shipping-city" name="shipping-city" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="shipping-postal">Code postal</label>
+                                <input type="text" id="shipping-postal" name="shipping-postal" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipping-phone">Téléphone</label>
+                            <input type="tel" id="shipping-phone" name="shipping-phone" required>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="button" class="btn btn-outline" onclick="showStep('step-login')">Retour</button>
+                            <button type="button" class="btn btn-primary" onclick="saveShipping()">Continuer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+        <div class="step" id="step-payment">
+                <h3>3. Mode de paiement</h3>
+                <div class="step-content">
+                    <!-- Ajouter dans checkout.html -->
+            <div id="payment-processing" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                <p>Traitement de votre commande en cours...</p>
+            </div>
+
+<div id="payment-error" class="alert alert-danger" style="display: none;"></div>
+                    <div class="payment-methods">
+                        <div class="payment-method">
+                            <input type="radio" id="payment-orange" name="payment-method" value="orange" checked>
+                            <label for="payment-orange">Orange Money</label>
+                            <div class="payment-details" id="orange-details">
+                                <button class="btn btn-orange" onclick="initiateOrangePayment()">
+                                    Payer avec Orange Money
+                                </button>
+                                <div id="orange-payment-status"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method">
+                            <input type="radio" id="payment-wave" name="payment-method" value="wave">
+                            <label for="payment-wave">Wave</label>
+                            <div class="payment-details" id="wave-details">
+                                <button class="btn btn-wave" onclick="initiateWavePayment()">
+                                    Payer avec Wave
+                                </button>
+                                <div id="wave-payment-status"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method">
+                            <input type="radio" id="payment-cash" name="payment-method" value="cash">
+                            <label for="payment-cash">Paiement à la livraison</label>
+                            <div class="payment-details" id="cash-details">
+                                <p>Vous paierez en espèces à la livraison de votre commande.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="button" class="btn btn-outline" onclick="showStep('step-shipping')">Retour</button>
+                        <button type="button" class="btn btn-primary" id="place-order-btn" style="display:none;">Confirmer la commande</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step" id="step-confirmation">
+                <h3>4. Confirmation</h3>
+                <div class="step-content">
+                    <div class="confirmation-message">
+                        <div class="confirmation-icon">✓</div>
+                        <h2>Merci pour votre commande!</h2>
+                        <p>Votre commande a été reçue et sera traitée dans les plus brefs délais.</p>
+                        <p>Numéro de commande: <strong id="order-number">ORD-12345</strong></p>
+                        <p>Un email de confirmation a été envoyé à votre adresse email.</p>
+                    </div>
+                    <div class="form-buttons">
+                        <a href="{% url 'home' %}" class="btn btn-outline">Retour à l'accueil</a>
+                        <a href="{% url 'home' %}" class="btn btn-primary">Continuer vos achats</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<style>/* Style principal du checkout */
+    .checkout-container {
+        max-width: 1200px;
+        margin: 60px auto;
+        padding: 0 20px;
+        color: #f0f0f0;
+    }
+    
+    .page-title {
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: #fff;
+        position: relative;
+    }
+    
+    .page-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 3px;
+        background: #3498db;
+    }
+    
+    .checkout-content {
+        display: flex;
+        gap: 30px;
+    }
+    
+    /* Style du résumé du panier */
+    .cart-summary {
+        flex: 1;
+        background-color: #161616;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cart-summary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #3498db, #2c3e50);
+    }
+    
+    .cart-summary h2 {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #2c3e50;
+        font-size: 1.5rem;
+        color: #3498db;
+    }
+    
+    .cart-items {
+        margin-bottom: 30px;
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    
+    .cart-items::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .cart-items::-webkit-scrollbar-track {
+        background: #0a0a0a;
+        border-radius: 10px;
+    }
+    
+    .cart-items::-webkit-scrollbar-thumb {
+        background: #3498db;
+        border-radius: 10px;
+    }
+    
+    .cart-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #2c3e50;
+    }
+    
+    .cart-item-details {
+        flex: 3;
+    }
+    
+    .cart-item-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #fff;
+    }
+    
+    .cart-item-quantity {
+        color: #bbb;
+        font-size: 0.9em;
+    }
+    
+    .cart-item-price {
+        flex: 1;
+        text-align: right;
+        font-weight: bold;
+        color: #3498db;
+    }
+    
+    .cart-totals {
+        margin-top: 25px;
+        padding: 20px;
+        background-color: #0f0f0f;
+        border-radius: 10px;
+    }
+    
+    .cart-totals > div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+    }
+    
+    .subtotal span:first-child,
+    .shipping span:first-child {
+        color: #ccc;
+    }
+    
+    .subtotal span:last-child,
+    .shipping span:last-child {
+        font-weight: 600;
+    }
+    
+    .total {
+        font-weight: bold;
+        font-size: 1.3em;
+        padding-top: 15px;
+        margin-top: 15px;
+        border-top: 1px solid #2c3e50;
+    }
+    
+    .total span:last-child {
+        color: #3498db;
+    }
+    
+    /* Style des étapes du checkout */
+    .checkout-steps {
+        flex: 2;
+    }
+    
+    .step {
+        background-color: #161616;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        margin-bottom: 25px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .step h3 {
+        padding: 20px 25px;
+        margin: 0;
+        background-color: #0f0f0f;
+        color: #ccc;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-left: 4px solid transparent;
+    }
+    
+    .step.active {
+        transform: translateY(-5px);
+    }
+    
+    .step.active h3 {
+        background-color: #0a0a0a;
+        color: white;
+        border-left: 4px solid #3498db;
+    }
+    
+    .step-content {
+        padding: 25px;
+        display: none;
+    }
+    
+    .step.active .step-content {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Style des formulaires */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #3498db;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    select {
+        width: 100%;
+        padding: 12px 15px;
+        background-color: #0a0a0a;
+        border: 1px solid #2c3e50;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="tel"]:focus,
+    select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        outline: none;
+    }
+    
+    /* Style des onglets login/register */
+    .login-options {
+        border: 1px solid #2c3e50;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #0a0a0a;
+    }
+    
+    .tab-headers {
+        display: flex;
+        background-color: #0f0f0f;
+    }
+    
+    .tab-header {
+        padding: 15px;
+        flex: 1;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .tab-header.active {
+        background-color: #161616;
+        color: #3498db;
+        position: relative;
+    }
+    
+    .tab-header.active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 3px;
+        background: #3498db;
+    }
+    
+    .tab-content {
+        padding: 25px;
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    /* Style des boutons */
+    .btn {
+        display: inline-block;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        color: #fff;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2980b9, #1e2a36);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+    
+    .btn-secondary {
+        background-color: transparent;
+        border: 1px solid #3498db;
+        color: #3498db;
+    }
+    
+    .btn-secondary:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid #3498db;
+        color: #3498db;
+    }
+    
+    .btn-outline:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .form-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #2c3e50;
+    }
+    
+    /* Style des méthodes de paiement */
+    .payment-methods {
+        margin-bottom: 25px;
+    }
+    
+    .payment-method {
+        margin-bottom: 20px;
+        padding: 20px;
+        border: 1px solid #2c3e50;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    
+    .payment-method:hover {
+        border-color: #3498db;
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    .payment-method input[type="radio"] {
+        margin-right: 10px;
+        accent-color: #3498db;
+    }
+    
+    .payment-method label {
+        font-weight: 600;
+        color: #fff;
+        display: inline-block;
+        cursor: pointer;
+    }
+    
+    .payment-details {
+        padding-top: 15px;
+        margin-top: 15px;
+        border-top: 1px solid #2c3e50;
+    }
+    
+    .btn-orange {
+        background: linear-gradient(135deg, #ff7900, #e06d00);
+        color: #fff;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .btn-orange:hover {
+        background: linear-gradient(135deg, #e06d00, #cc6000);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 121, 0, 0.3);
+    }
+    
+    .btn-wave {
+        background: linear-gradient(135deg, #1D5ECD, #174ba3);
+        color: #fff;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .btn-wave:hover {
+        background: linear-gradient(135deg, #174ba3, #143e89);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(29, 94, 205, 0.3);
+    }
+    
+    /* Style de l'étape de confirmation */
+    .confirmation-message {
+        text-align: center;
+        padding: 40px 0;
+    }
+    
+    .confirmation-icon {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #3498db, #2c3e50);
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 50px;
+        margin: 0 auto 30px;
+        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+    }
+    
+    .confirmation-message h2 {
+        color: #3498db;
+        margin-bottom: 20px;
+    }
+    
+    .confirmation-message p {
+        color: #ccc;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+    }
+    
+    .confirmation-message strong {
+        color: #fff;
+    }
+    
+    /* Indicateurs de statut */
+    .payment-status {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    
+    .payment-success {
+        background-color: rgba(40, 167, 69, 0.1);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+        color: #28a745;
+    }
+    
+    .payment-error {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+    }
+    
+    .payment-processing {
+        background-color: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        color: #ffc107;
+    }
+    
+    /* Indicateur visuel de chargement */
+    #payment-processing {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border: 0.25em solid rgba(52, 152, 219, 0.2);
+        border-right-color: #3498db;
+        border-radius: 50%;
+        animation: spinner 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes spinner {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Message d'erreur */
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #dc3545;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 992px) {
+        .checkout-content {
+            flex-direction: column;
+        }
+        
+        .cart-summary {
+            margin-bottom: 30px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .form-buttons {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-buttons .btn {
+            width: 100%;
+        }
+        
+        .checkout-container {
+            margin: 30px auto;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .step h3 {
+            padding: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .step-content {
+            padding: 20px 15px;
+        }
+        
+        .cart-summary h2,
+        .confirmation-message h2 {
+            font-size: 1.3rem;
+        }
+    }</style>
+
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Charger les produits du panier
+        loadCartItems();
+        
+        // Configurer les onglets de connexion/inscription
+        $('.tab-header').click(function() {
+            $('.tab-header').removeClass('active');
+            $(this).addClass('active');
+            
+            var tabId = $(this).text().toLowerCase().trim();
+            $('.tab-content').removeClass('active');
+            $('#' + tabId).addClass('active');
+        });
+        
+        // Configurer les boutons radio de paiement
+        $('input[name="payment-method"]').change(function() {
+            $('.payment-details').hide();
+            $('#' + $(this).val() + '-details').show();
+        });
+        
+        // Afficher par défaut les détails du paiement mobile
+        $('#orange-details').show();
+    });
+    
+    function loadCartItems() {
+        var Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+        var cartItems = $('#checkout-items');
+        cartItems.empty();
+        
+        var subtotal = 0;
+        
+        for (var id in Panier) {
+            var item = Panier[id];
+            var itemTotal = item[2];
+            subtotal += itemTotal;
+            
+            var cartItem = $('<div class="cart-item"></div>');
+            cartItem.append('<div class="cart-item-details"><div class="cart-item-title">' + item[1] + '</div><div class="cart-item-quantity">' + item[0] + ' x ' + (itemTotal / item[0]) + ' FCFA</div></div>');
+            cartItem.append('<div class="cart-item-price">' + itemTotal + ' FCFA</div>');
+            
+            cartItems.append(cartItem);
+        }
+        
+        $('#subtotal').text(subtotal + ' FCFA');
+        $('#total').text((subtotal + 2000) + ' FCFA');
+        
+        // Si le panier est vide, rediriger vers la page d'accueil
+        if (Object.keys(Panier).length === 0) {
+            alert('Votre panier est vide. Veuillez ajouter des produits avant de passer à la caisse.');
+            window.location.href = "{% url 'home' %}";
+        }
+    }
+    
+    function showTab(tabId) {
+        $('.tab-header').removeClass('active');
+        $('.tab-header').each(function() {
+            if ($(this).text().toLowerCase().trim() === tabId) {
+                $(this).addClass('active');
+            }
+        });
+        
+        $('.tab-content').removeClass('active');
+        $('#' + tabId).addClass('active');
+    }
+    
+    function showStep(stepId) {
+        $('.step').removeClass('active');
+        $('#' + stepId).addClass('active');
+        
+        // Scroll to the active step
+        $('html, body').animate({
+            scrollTop: $('#' + stepId).offset().top - 20
+        }, 300);
+    }
+    
+    function proceedAsGuest() {
+        showStep('step-shipping');
+    }
+    
+    function saveShipping() {
+        // Validation simple
+        var form = document.getElementById('shipping-form');
+        if (form.checkValidity()) {
+            // Enregistrer les données d'expédition dans sessionStorage
+            var shippingData = {
+                firstName: $('#shipping-first-name').val(),
+                lastName: $('#shipping-last-name').val(),
+                address: $('#shipping-address').val(),
+                city: $('#shipping-city').val(),
+                postalCode: $('#shipping-postal').val(),
+                phone: $('#shipping-phone').val()
+            };
+            
+            sessionStorage.setItem('shippingData', JSON.stringify(shippingData));
+            showStep('step-payment');
+        } else {
+            form.reportValidity();
+        }
+    }
+    
+    // Configuration des APIs
+    const paymentConfig = {
+        orange: {
+            merchantCode: "VOTRE_CODE_MARCHAND_ORANGE",
+            apiKey: "VOTRE_CLE_API_ORANGE",
+            callbackUrl: "https://votreboutique.com/payment-callback/orange"
+        },
+        wave: {
+            merchantId: "VOTRE_ID_MARCHAND_WAVE",
+            apiKey: "VOTRE_CLE_API_WAVE",
+            callbackUrl: "https://votreboutique.com/payment-callback/wave"
+        }
+    };
+
+    // Initialisation du paiement Orange Money
+    function initiateOrangePayment() {
+        const Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+        const total = calculateTotal(Panier) + 2000; // Ajout des frais de livraison
+        
+        $('#orange-payment-status').html('<div class="payment-status payment-processing">Initialisation du paiement...</div>');
+        
+        placeOrder();
+    }
+
+    // Initialisation du paiement Wave
+    function initiateWavePayment() {
+        const Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+        const total = calculateTotal(Panier) + 2000; // Ajout des frais de livraison
+        
+        $('#wave-payment-status').html('<div class="payment-status payment-processing">Initialisation du paiement...</div>');
+        
+        // En production, remplacer par l'appel réel à placeOrder()
+            placeOrder();
+    }
+
+    // Fonction pour calculer le total
+    function calculateTotal(Panier) {
+        let subtotal = 0;
+        for (const id in Panier) {
+            subtotal += Panier[id][2];
+        }
+        return subtotal;
+    }
+
+    // Fonctions de simulation (à remplacer par des appels API réels)
+    function simulateOrangePayment(amount) {
+        return new Promise((resolve, reject) => {
+            // Simuler un succès 80% du temps
+            if (Math.random() > 0.2) {
+                resolve({
+                    status: 'SUCCESS',
+                    transactionId: 'OM' + Date.now(),
+                    amount: amount,
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                reject(new Error('Échec de la transaction Orange Money'));
+            }
+        });
+    }
+
+    function simulateWavePayment(amount) {
+        return new Promise((resolve, reject) => {
+            // Simuler un succès 80% du temps
+            if (Math.random() > 0.2) {
+                resolve({
+                    status: 'SUCCESS',
+                    transactionId: 'WV' + Date.now(),
+                    amount: amount,
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                reject(new Error('Échec de la transaction Wave'));
+            }
+        });
+    }
+    function placeOrder() {
+    // Désactiver le bouton pour éviter les doubles clics
+    const submitBtn = $('#place-order-btn');
+    submitBtn.prop('disabled', true);
+    submitBtn.text('Traitement en cours...');
+
+    // Afficher un indicateur de chargement
+    $('#payment-processing').show();
+
+    const paymentMethod = $('input[name="payment-method"]:checked').val();
+    const Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+    const shippingData = JSON.parse(sessionStorage.getItem('shippingData')) || {};
+
+    // Convertir le panier en format structuré
+    const items = [];
+    let subtotal = 0;
+    
+    for (const [id, details] of Object.entries(Panier)) {
+        const itemTotal = parseFloat(details[2]) || 0;
+        items.push({
+            id: id,
+            product_id: parseInt(id),
+            name: details[1] || 'Produit sans nom',
+            quantity: parseInt(details[0]) || 1,
+            price: (itemTotal / (parseInt(details[0]) || 1)).toFixed(2),
+            total: itemTotal.toFixed(2)
+        });
+        subtotal += itemTotal;
+    }
+
+    const total = subtotal + 2000; // Ajout des frais de livraison
+
+    $.ajax({
+        url: "{% url 'checkout' %}",
+        method: "POST",
+        data: {
+            'items': JSON.stringify(items),
+            'total': total.toFixed(2),
+            'address': shippingData.address || '',
+            'ville': shippingData.city || '',
+            'pays': shippingData.country || 'Côte d\'Ivoire',
+            'zipcode': shippingData.postalCode || '',
+            'payment_method': paymentMethod,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                // Vider le panier seulement après confirmation
+                localStorage.removeItem('Panier');
+                sessionStorage.removeItem('shippingData');
+                
+                if (response.payment_url) {
+                    // Redirection pour paiement en ligne
+                    window.location.replace( response.payment_url);
+                } else if (response.redirect_url) {
+                    // Redirection pour confirmation
+                    window.location.replace(response.redirect_url);
+                }
+            } else {
+                showError(response.message || "Erreur inconnue lors de la commande");
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = "Erreur lors de la communication avec le serveur";
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            } else if (xhr.statusText) {
+                errorMsg = xhr.statusText;
+            }
+            showError(errorMsg);
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false);
+            submitBtn.text('Confirmer la commande');
+            $('#payment-processing').hide();
+        }
+    });
+}
+
+function showError(message) {
+    const errorDiv = $('#payment-error');
+    errorDiv.text(message).show();
+    setTimeout(() => errorDiv.hide(), 5000);
+    $('html, body').animate({
+        scrollTop: errorDiv.offset().top - 100
+    }, 300);
+}
+    // Initialisation
+$(document).ready(function() {
+    // Configurer les boutons radio de paiement
+    $('input[name="payment-method"]').change(function() {
+        $('.payment-details').hide();
+        $('#' + $(this).val() + '-details').show();
+        
+        // Afficher le bouton seulement pour le paiement cash
+        if ($(this).val() === 'cash') {
+            $('#place-order-btn').show();
+        } else {
+            // Pour Orange/Wave, on utilise leurs propres boutons
+            $('#place-order-btn').hide();
+        }
+    });
+    
+    // Afficher par défaut les détails du paiement Orange
+    $('#orange-details').show();
+    
+    // Masquer le bouton de confirmation par défaut
+    $('#place-order-btn').hide();
+    
+    // Lier le bouton de commande
+    $('#place-order-btn').click(placeOrder);
+});
+</script>
+{% endblock %}

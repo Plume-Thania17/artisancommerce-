@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="product-detail">
+        <div class="product-detail-grid">
+            <div class="product-detail-image">
+                <img src="{{ product.get_image_url }}" width="500px" height="500px" alt="{{ product.title }}">
+                {% if product.is_new %}
+                <span class="product-badge new">Nouveau</span>
+                {% endif %}
+                {% if product.old_price %}
+                <span class="product-badge discount">Promo</span>
+                {% endif %}
+            </div>
+            <div class="product-detail-info">
+                <h1 class="product-detail-title">{{ product.title }}</h1>
+                <div class="product-detail-price">
+                    {% if product.old_price %}
+                    <span class="old-price">{{ product.old_price }} FCFA</span>
+                    {% endif %}
+                    <span class="current-price">{{ product.price }} FCFA</span>
+                </div>
+                <div class="product-detail-category">
+                    Catégorie: {{ product.Categorie.name }}
+                </div>
+                <div class="product-detail-description">
+                    {{ product.description }}
+                </div>
+                
+                <div class="product-detail-actions">
+                    <button id="{{ product.id }}" class="add-to-cart">Ajouter au panier</button>
+                    
+                    {% if user.is_authenticated %}
+                        {% if is_favorite %}
+                            <form method="post" action="{% url 'remove_favorite' product.id %}" class="favorite-form">
+                                {% csrf_token %}
+                                <button type="submit" class="favorite-btn remove-favorite">❤️ Retirer des favoris</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'add_favorite' product.id %}" class="favorite-form">
+                                {% csrf_token %}
+                                <button type="submit" class="favorite-btn add-favorite">❤️ Ajouter aux favoris</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'detail' product.id %}" class="favorite-btn">❤️ Connectez-vous pour ajouter aux favoris</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<style>
+    /* Styles pour la page de détail */
+    .product-detail {
+        padding: 40px 0;
+    }
+    
+    .product-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 50px;
+    }
+    
+    .product-detail-image {
+        position: relative;
+    }
+    
+    .product-detail-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .product-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+    }
+    
+    .product-badge.new {
+        background: #3498db;
+        color: #000;
+    }
+    
+    .product-badge.discount {
+        background: #e74c3c;
+        color: #fff;
+        left: auto;
+        right: 15px;
+    }
+    
+    .product-detail-title {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #3498db;
+    }
+    
+    .product-detail-price {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #FF8200;
+    }
+    
+    .old-price {
+        text-decoration: line-through;
+        color: #777;
+        margin-right: 15px;
+        font-size: 18px;
+    }
+    
+    .current-price {
+        color: #FF8200;
+    }
+    
+    .product-detail-category {
+        font-size: 16px;
+        color: #aaa;
+        margin-bottom: 20px;
+    }
+    
+    .product-detail-description {
+        font-size: 16px;
+        line-height: 1.8;
+        margin-bottom: 40px;
+        color: #ccc;
+    }
+    
+    .product-detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .add-to-cart {
+        padding: 15px 30px;
+        background: #3498db;
+        color: #000;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .add-to-cart:hover {
+        background: #2980b9;
+    }
+    
+    .favorite-form {
+        display: inline;
+    }
+    
+    .favorite-btn {
+        padding: 15px 20px;
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .add-favorite:hover {
+        background: #ff6b6b;
+    }
+    
+    .remove-favorite {
+        background: #ff6b6b;
+        color: #000;
+    }
+    
+    .remove-favorite:hover {
+        background: #ff3b3b;
+    }
+</style>
+
+<script>
+    // Gestion de l'ajout au panier
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelector('.add-to-cart').addEventListener('click', function() {
+            var item_id = this.id.toString();
+            console.log('Ajout au panier - ID:', item_id);
+            
+            // Récupérer le panier existant ou en créer un nouveau
+            var Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+            
+            // Récupérer le prix (gère à la fois les anciens et nouveaux prix)
+            var priceElement = document.querySelector('.current-price');
+            var price = parseFloat(priceElement.textContent);
+            
+            if (Panier[item_id] !== undefined) {
+                // Augmenter la quantité si l'article existe déjà
+                Panier[item_id][0] += 1;
+                Panier[item_id][2] += price;
+            } else {
+                // Ajouter un nouvel article au panier
+                var quantite = 1;
+                var nom = document.querySelector(".product-detail-title").textContent;
+                Panier[item_id] = [quantite, nom, price];
+            }
+            
+            // Sauvegarder le panier dans localStorage
+            localStorage.setItem('Panier', JSON.stringify(Panier));
+            
+            // Mettre à jour le compteur du panier
+            updateCartCount();
+            
+            // Animation de confirmation
+            this.textContent = "Ajouté ✓";
+            this.style.backgroundColor = "#27ae60";
+            
+            setTimeout(function() {
+                this.textContent = "Ajouter au panier";
+                this.style.backgroundColor = "#3498db";
+            }.bind(this), 1500);
+        });
+        
+        // Fonction pour mettre à jour le compteur du panier
+        function updateCartCount() {
+            var Panier = JSON.parse(localStorage.getItem('Panier')) || {};
+            var count = 0;
+            
+            for (var item_id in Panier) {
+                count += Panier[item_id][0];
+            }
+            
+            document.getElementById('cart-count').textContent = count;
+        }
+    });
+</script>
+{% endblock %}

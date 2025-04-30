@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="confirmation-container">
+    <div class="shape-accent-1"></div>
+    <div class="shape-accent-2"></div>
+    
+    <div class="confirmation-header">
+        <div class="confirmation-icon">✓</div>
+        <h1>Merci pour votre commande, {{ commande.nom }} !</h1>
+        <p class="order-number">Numéro de commande: <strong>{{ order_number }}</strong></p>
+    </div>
+
+    <div class="confirmation-details">
+        <div class="order-summary">
+            <h2>Résumé de votre commande</h2>
+            <div class="order-items">
+                {% for item in items %}
+                <div class="order-item">
+                    <span class="item-name">{{ item.name }}</span>
+                    <span class="item-quantity">{{ item.quantity }} × {{ item.price }} FCFA</span>
+                    <span class="item-total">{{ item.total }} FCFA</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="order-totals">
+                <div class="subtotal">
+                    <span>Sous-total:</span>
+                    <span>{{ commande.total }} FCFA</span>
+                </div>
+                <div class="shipping">
+                    <span>Frais de livraison:</span>
+                    <span>{{ shipping_cost }} FCFA</span>
+                </div>
+                <div class="total">
+                    <span>Total:</span>
+                    <span>{{ total }} FCFA</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="shipping-info">
+                <h2>Informations de livraison</h2>
+                <p><strong>Adresse:</strong> {{ commande.address }}</p>
+                <p><strong>Ville:</strong> {{ commande.ville }}</p>
+                <p><strong>Pays:</strong> {{ commande.pays }}</p>
+                <p><strong>Code postal:</strong> {{ commande.zipcode }}</p>
+            </div>
+
+            <div class="payment-info">
+                <h2>Informations de paiement</h2>
+                <p><strong>Méthode de paiement:</strong> {{ payment_method }}</p>
+                <p><strong>Statut du paiement:</strong> {{ payment_status }}</p>
+                <p><strong>Email:</strong> {{ commande.email }}</p>
+                <p><strong>Date de la commande:</strong> {{ commande.date_commande|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirmation-actions">
+        <a href="{% url 'home' %}" class="btn-primary">Retour à l'accueil</a>
+        <a href="{% url 'home' %}" class="btn-secondary">Suivre ma commande</a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block css %}
+<style>
+    /* Style pour la page de confirmation */
+    .confirmation-container {
+        max-width: 900px;
+        margin: 60px auto;
+        padding: 40px;
+        background: #161616;
+        color: #f0f0f0;
+        border-radius: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+    
+    /* Formes d'accent géométriques */
+    .shape-accent-1 {
+        position: absolute;
+        top: -80px;
+        right: -50px;
+        width: 250px;
+        height: 250px;
+        background: linear-gradient(45deg, #1e3799, #3498db);
+        clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        transform: rotate(-15deg) skew(5deg, 10deg);
+        opacity: 0.2;
+        z-index: -1;
+    }
+    
+    .shape-accent-2 {
+        position: absolute;
+        bottom: -70px;
+        left: -80px;
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, #3498db, #0a3d62);
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        opacity: 0.15;
+        z-index: -1;
+    }
+
+    .confirmation-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .confirmation-icon {
+        width: 90px;
+        height: 90px;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        border-radius: 50%;
+        color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 45px;
+        font-weight: bold;
+        margin: 0 auto 25px;
+        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+    }
+
+    .confirmation-header h1 {
+        color: #3498db;
+        margin-bottom: 15px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .order-number {
+        font-size: 16px;
+        color: #ccc;
+        letter-spacing: 1px;
+    }
+
+    .confirmation-details {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    
+    @media (min-width: 768px) {
+        .confirmation-details {
+            grid-template-columns: 1.5fr 1fr;
+        }
+    }
+
+    .order-summary, .shipping-info, .payment-info {
+        background: rgba(22, 22, 22, 0.8);
+        padding: 25px;
+        border-radius: 8px;
+        border-left: 3px solid #3498db;
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+    
+    .info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .order-summary h2, .shipping-info h2, .payment-info h2 {
+        margin-top: 0;
+        color: #3498db;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+        font-size: 20px;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .order-summary h2::after, .shipping-info h2::after, .payment-info h2::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        width: 60px;
+        height: 3px;
+        background: #3498db;
+    }
+
+    .order-items {
+        margin-bottom: 25px;
+    }
+
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+
+    .item-name {
+        flex: 2;
+        font-weight: 500;
+    }
+
+    .item-quantity {
+        flex: 1;
+        text-align: center;
+        color: #aaa;
+    }
+
+    .item-total {
+        flex: 1;
+        text-align: right;
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    .order-totals > div {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding: 8px 0;
+    }
+    
+    .subtotal, .shipping {
+        color: #ccc;
+    }
+
+    .total {
+        font-weight: bold;
+        font-size: 1.2em;
+        padding-top: 15px;
+        margin-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+    }
+    
+    .total span:last-child {
+        color: #3498db;
+    }
+    
+    .shipping-info p, .payment-info p {
+        margin-bottom: 12px;
+        line-height: 1.6;
+        color: #ddd;
+    }
+    
+    .shipping-info strong, .payment-info strong {
+        color: #3498db;
+        font-weight: 600;
+    }
+
+    .confirmation-actions {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 40px;
+    }
+    
+    .btn-primary, .btn-secondary {
+        display: inline-block;
+        padding: 12px 28px;
+        border-radius: 5px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn-primary {
+        background: #3498db;
+        color: #000;
+    }
+    
+    .btn-secondary {
+        background: #222;
+        border: 1px solid #3498db;
+        color: #3498db;
+    }
+    
+    .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+    }
+    
+    .btn-secondary:hover {
+        background: #181818;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    @media (max-width: 768px) {
+        .confirmation-container {
+            padding: 30px 20px;
+            margin: 30px auto;
+        }
+        
+        .confirmation-header h1 {
+            font-size: 24px;
+        }
+        
+        .confirmation-icon {
+            width: 70px;
+            height: 70px;
+            font-size: 35px;
+        }
+        
+        .confirmation-actions {
+            flex-direction: column;
+        }
+        
+        .btn-primary, .btn-secondary {
+            width: 100%;
+        }
+        
+        .item-quantity {
+            display: none;
+        }
+        
+        .order-item {
+            flex-wrap: wrap;
+        }
+        
+        .item-name {
+            flex: 1 0 100%;
+            margin-bottom: 8px;
+        }
+        
+        .item-total {
+            flex: 0 0 auto;
+            margin-left: auto;
+        }
+    }
+</style>
+{% endblock %}

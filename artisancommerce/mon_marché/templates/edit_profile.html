@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="profile-edit-container">
+    <h2>Modifier mon profil</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="first_name">Prénom:</label>
+            <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Nom:</label>
+            <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{ user.email }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Téléphone:</label>
+            <input type="text" id="phone" name="phone" value="{{ profile.phone }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="address">Adresse:</label>
+            <input type="text" id="address" name="address" value="{{ profile.address }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="ville">Ville:</label>
+            <input type="text" id="ville" name="ville" value="{{ profile.ville }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="zipcode">Code postal:</label>
+            <input type="text" id="zipcode" name="zipcode" value="{{ profile.zipcode }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="profile_pic">Photo de profil:</label>
+            {% if profile.profile_pic %}
+                <img src="{{ profile.profile_pic.url }}" alt="Photo actuelle" style="max-width: 100px;">
+            {% endif %}
+            <input type="file" id="profile_pic" name="profile_pic">
+        </div>
+        
+        <button type="submit" class="btn">Enregistrer les modifications</button>
+    </form>
+</div>
+{% endblock %}

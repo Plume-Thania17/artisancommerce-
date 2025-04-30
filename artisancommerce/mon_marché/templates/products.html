@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="products">
+    <div class="container">
+        <h2 class="section-title">Tous nos produits</h2>
+        
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product">
+                <div class="product-image">
+                    <img src="{{ product.get_image_url }}" alt="{{ product.title }}">
+                    {% if product.is_new %}<span class="product-tag">Nouveau</span>{% endif %}
+                    <div class="product-actions">
+                        {% if user.is_authenticated %}
+                            {% if product.id in favorite_ids %}
+                                <form method="post" action="{% url 'remove_favorite' product.id %}" class="favorite-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="favorite-btn active" aria-label="Retirer des favoris">
+                                        ❤️
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'add_favorite' product.id %}" class="favorite-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="favorite-btn" aria-label="Ajouter aux favoris">
+                                        🤍
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'login' %}?next={{ request.path }}" class="favorite-btn" aria-label="Connectez-vous pour ajouter aux favoris">
+                                🤍
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'detail' product.id %}" class="view-btn" aria-label="Voir les détails">
+                            👁️
+                        </a>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-category">{{ product.categorie.name }}</div>
+                    <h3 class="product-title">{{ product.title }}</h3>
+                    <div class="product-price">
+                        <span class="current-price">{{ product.price }} FCFA</span>
+                        {% if product.old_price %}
+                        <span class="old-price">{{ product.old_price }} FCFA</span>
+                        {% endif %}
+                    </div>
+                    <button class="add-to-cart" data-id="{{ product.id }}">Ajouter au panier</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; première</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">précédent</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">suivant</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">dernière &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Section des produits */
+    .products {
+        padding: 80px 0;
+        position: relative;
+    }
+
+    .section-title {
+        font-size: 36px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 50px;
+        color: #fff;
+        position: relative;
+        letter-spacing: 2px;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 3px;
+        background: #3498db;
+    }
+
+    /* Grille de produits */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    /* Carte de produit */
+    .product {
+        background: #161616;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .product:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Image du produit */
+    .product-image {
+        position: relative;
+        overflow: hidden;
+        height: 300px;
+    }
+
+    .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s;
+    }
+
+    .product:hover .product-image img {
+        transform: scale(1.05);
+    }
+
+    /* Tag "Nouveau" */
+    .product-tag {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: #3498db;
+        color: #000;
+        font-weight: 600;
+        font-size: 12px;
+        padding: 5px 12px;
+        border-radius: 3px;
+        z-index: 2;
+    }
+
+    /* Actions sur le produit (favoris, voir) */
+    .product-actions {
+        position: absolute;
+        bottom: -50px;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        transition: bottom 0.3s;
+        z-index: 3;
+    }
+
+    .product:hover .product-actions {
+        bottom: 0;
+    }
+
+    /* Boutons favoris et voir */
+    .favorite-btn, .view-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.4em;
+        padding: 8px;
+        transition: all 0.3s;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(22, 22, 22, 0.8);
+    }
+
+    .favorite-btn {
+        color: #ccc;
+    }
+
+    .favorite-btn.active {
+        color: #ff3b3b;
+    }
+
+    .favorite-btn:hover {
+        transform: scale(1.2);
+        background: rgba(34, 34, 34, 0.9);
+    }
+
+    .view-btn {
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .view-btn:hover {
+        color: #3498db;
+        transform: scale(1.2);
+        background: rgba(34, 34, 34, 0.9);
+    }
+
+    /* Informations du produit */
+    .product-info {
+        padding: 20px;
+    }
+
+    .product-category {
+        color: #3498db;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .product-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3; /* Ajout de la propriété standard */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+    /* Prix */
+    .product-price {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .current-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .old-price {
+        font-size: 16px;
+        color: #999;
+        text-decoration: line-through;
+        margin-left: 10px;
+    }
+
+    /* Bouton ajouter au panier */
+    .add-to-cart {
+        width: 100%;
+        padding: 12px 0;
+        background: #3498db;
+        color: #000;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .add-to-cart:hover {
+        background: #2980b9;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    .add-to-cart:active {
+        transform: translateY(0);
+    }
+
+    /* Pagination */
+    .pagination {
+        margin-top: 50px;
+        text-align: center;
+    }
+
+    .step-links {
+        display: inline-flex;
+        align-items: center;
+        background: #161616;
+        padding: 10px 20px;
+        border-radius: 30px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .step-links a {
+        color: #3498db;
+        text-decoration: none;
+        margin: 0 10px;
+        font-weight: 500;
+        transition: color 0.3s;
+    }
+
+    .step-links a:hover {
+        color: #2980b9;
+    }
+
+    .current {
+        color: #fff;
+        margin: 0 15px;
+        font-weight: 500;
+    }
+
+    /* Media queries pour la responsivité */
+    @media (max-width: 992px) {
+        .product-grid {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        
+        .product-image {
+            height: 250px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .product-grid {
+            grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+        }
+        
+        .section-title {
+            font-size: 28px;
+        }
+        
+        .product-image {
+            height: 280px;
+        }
+    }
+
+    /* Animation supplémentaire pour améliorer l'expérience utilisateur */
+    @keyframes fadeIn {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .product {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Délai d'animation pour chaque produit */
+    .product:nth-child(2n) {
+        animation-delay: 0.1s;
+    }
+
+    .product:nth-child(3n) {
+        animation-delay: 0.2s;
+    }
+
+    .product:nth-child(4n) {
+        animation-delay: 0.3s;
+    }
+
+    /* Formulaires pour les favoris */
+    .favorite-form {
+        margin: 0;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation des boutons
+    const actionButtons = document.querySelectorAll('.favorite-btn, .view-btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.2)';
+        });
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Gestion du panier
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            
+            // Animation de feedback
+            const originalText = this.textContent;
+            this.textContent = 'Ajouté !';
+            this.style.backgroundColor = '#27ae60';
+            
+            setTimeout(() => {
+                this.textContent = originalText;
+                this.style.backgroundColor = '';
+            }, 1500);
+            
+            // Ici vous ajouterez la logique AJAX pour ajouter au panier
+            console.log(`Produit ${productId} ajouté au panier`);
+
+            // Tentative d'ajout au panier via localStorage (si vous utilisez cette méthode)
+            try {
+                let cart = JSON.parse(localStorage.getItem('Panier')) || {};
+                let productTitle = this.closest('.product').querySelector('.product-title').textContent;
+                let productPrice = this.closest('.product').querySelector('.current-price').textContent;
+                let priceValue = parseFloat(productPrice.replace(/[^\d]/g, ''));
+                
+                if (cart[productId]) {
+                    cart[productId][0] += 1; // Augmenter la quantité
+                    cart[productId][2] += priceValue; // Mettre à jour le prix total
+                } else {
+                    cart[productId] = [1, productTitle, priceValue]; // [quantité, titre, prix]
+                }
+                
+                localStorage.setItem('Panier', JSON.stringify(cart));
+                
+                // Mettre à jour le compteur du panier dans le header si présent
+                const cartCount = document.querySelector('.cart-count');
+                if (cartCount) {
+                    cartCount.textContent = Object.keys(cart).length;
+                }
+            } catch (e) {
+                console.error("Erreur lors de l'ajout au panier:", e);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
