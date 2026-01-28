@@ -122,20 +122,43 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+SITE_URL = 'http://127.0.0.1:8000' 
 # settings.py
-ORANGE_MERCHANT_KEY = 'votre_merchant_key'
-ORANGE_API_TOKEN = 'votre_api_token'
-ORANGE_CALLBACK_URL = 'https://votresite.com/payment-callback/orange'
+# ==================== CONFIGURATION WAVE ====================
+# Documentation: https://developer.wave.com
+WAVE_API_KEY = 'your_wave_api_key_here'  # À obtenir sur Wave Developer Portal
+WAVE_MERCHANT_ID = 'your_merchant_id_here'
+WAVE_SECRET_KEY = 'your_secret_key_here'
 
-WAVE_API_KEY = 'votre_api_key_wave'
-WAVE_MERCHANT_ID = 'votre_merchant_id'
-WAVE_SUCCESS_URL = 'https://votresite.com/payment-success/wave'
-WAVE_ERROR_URL = 'https://votresite.com/payment-error/wave'
- # Remplacez 'mon_marché' par le nom de votre application
+# Numéro Wave pour recevoir les paiements
+WAVE_PAYMENT_NUMBER = '22507687487'  # VOTRE NUMÉRO
+
+# URLs de callback Wave
+WAVE_SUCCESS_URL = f'{SITE_URL}/payment/wave/success/'
+WAVE_ERROR_URL = f'{SITE_URL}/payment/wave/error/'
+WAVE_CALLBACK_URL = f'{SITE_URL}/payment/wave/callback/'
+
+# ==================== CONFIGURATION ORANGE MONEY ====================
+ORANGE_MERCHANT_KEY = 'your_orange_merchant_key'
+ORANGE_API_TOKEN = 'your_orange_api_token'
+ORANGE_CALLBACK_URL = f'{SITE_URL}/payment/orange/callback/'
+ORANGE_CANCEL_URL = f'{SITE_URL}/payment/orange/cancel/'
+ORANGE_NOTIF_URL = f'{SITE_URL}/payment/orange/notification/'
+
+# ==================== CONFIGURATION EMAIL ====================
+# Pour envoyer des emails de confirmation
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'kouadionia@gmail.com'
+EMAIL_HOST_PASSWORD = 'Thania_akt17'
+
+DEFAULT_FROM_EMAIL = 'Mynia Boutique <noreply@mynia.com>'
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Ajoutez dans settings.py
-LOGIN_URL = '//login/'
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

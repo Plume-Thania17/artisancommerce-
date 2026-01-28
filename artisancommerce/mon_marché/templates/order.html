@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Réutiliser les styles de base */
+    .profile-section {
+        padding: 3rem 0;
+        background: var(--light-gray);
+        min-height: calc(100vh - 200px);
+    }
+    
+    .profile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+    }
+    
+    .profile-welcome {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--salmon), var(--primary-blue));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--white);
+        text-transform: uppercase;
+    }
+    
+    .profile-greeting h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 0.25rem;
+    }
+    
+    .profile-greeting p {
+        color: var(--gray);
+        font-size: 1rem;
+    }
+    
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.75rem;
+        background: var(--white);
+        color: var(--dark-gray);
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .logout-btn:hover {
+        border-color: var(--salmon);
+        color: var(--salmon);
+    }
+    
+    .profile-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    
+    .profile-sidebar {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 100px;
+    }
+    
+    .sidebar-nav {
+        list-style: none;
+    }
+    
+    .sidebar-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        color: var(--dark-gray);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 15px;
+    }
+    
+    .sidebar-link:hover {
+        background: var(--light-blue);
+        color: var(--primary-blue);
+        transform: translateX(5px);
+    }
+    
+    .sidebar-link.active {
+        background: var(--salmon);
+        color: var(--white);
+    }
+    
+    .sidebar-icon {
+        font-size: 20px;
+    }
+    
+    .profile-content {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 2.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .content-header {
+        margin-bottom: 2rem;
+    }
+    
+    .content-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--black);
+    }
+    
+    /* ==================== ORDERS LIST ==================== */
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .order-card {
+        background: var(--white);
+        border: 2px solid var(--light-gray);
+        border-radius: 15px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .order-card:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 5px 20px rgba(74, 144, 226, 0.1);
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .order-info h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 0.5rem;
+    }
+    
+    .order-date {
+        color: var(--gray);
+        font-size: 14px;
+    }
+    
+    .order-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .order-status.en_attente {
+        background: #FFF4E5;
+        color: #FF9800;
+    }
+    
+    .order-status.livree {
+        background: #E8F5E9;
+        color: #4CAF50;
+    }
+    
+    .order-status.annulee {
+        background: #FFEBEE;
+        color: #F44336;
+    }
+    
+    .order-body {
+        margin-bottom: 1rem;
+    }
+    
+    .order-product {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .order-product:last-child {
+        border-bottom: none;
+    }
+    
+    .product-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        object-fit: cover;
+        background: var(--light-gray);
+    }
+    
+    .product-details h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-meta {
+        color: var(--gray);
+        font-size: 14px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--light-gray);
+    }
+    
+    .order-payment {
+        color: var(--gray);
+        font-size: 14px;
+    }
+    
+    .order-total {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    .total-label {
+        font-size: 13px;
+        color: var(--gray);
+        margin-bottom: 0.25rem;
+    }
+    
+    .total-amount {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--salmon);
+    }
+    
+    /* ==================== EMPTY STATE ==================== */
+    .empty-orders {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-orders h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-orders p {
+        color: var(--gray);
+        margin-bottom: 2rem;
+        font-size: 1rem;
+    }
+    
+    .shop-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, var(--primary-blue), var(--salmon));
+        color: var(--white);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .shop-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-sidebar {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        
+        .order-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .order-body {
+            flex-direction: column;
+        }
+        
+        .order-footer {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<section class="profile-section">
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-welcome">
+                <div class="profile-avatar">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                </div>
+                <div class="profile-greeting">
+                    <h1>Bonjour, {{ user.first_name|default:"Utilisateur" }}</h1>
+                    <p>Gérez votre compte et vos commandes</p>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                🚪 Déconnexion
+            </a>
+        </div>
+        
+        <!-- Profile Container -->
+        <div class="profile-container">
+            <!-- Sidebar -->
+            <aside class="profile-sidebar">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="{% url 'profile' %}" class="sidebar-link">
+                            <span class="sidebar-icon">👤</span>
+                            Mon Profil
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'adresse' %}" class="sidebar-link">
+                            <span class="sidebar-icon">📍</span>
+                            Mes Adresses
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'order' %}" class="sidebar-link active">
+                            <span class="sidebar-icon">📦</span>
+                            Mes Commandes
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'setting' %}" class="sidebar-link">
+                            <span class="sidebar-icon">⚙️</span>
+                            Paramètres
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+            
+            <!-- Content Area -->
+            <main class="profile-content">
+                <div class="content-header">
+                    <h2 class="content-title">Historique des commandes</h2>
+                </div>
+                
+                {% if commandes %}
+                <!-- Orders List -->
+                <div class="orders-list">
+                    {% for commande in commandes %}
+                    <div class="order-card">
+                        <div class="order-header">
+                            <div class="order-info">
+                                <h3>CMD-{{ commande.date_commande|date:"Y" }}-{{ commande.id }}</h3>
+                                <p class="order-date">{{ commande.date_commande|date:"d F Y" }}</p>
+                            </div>
+                            <span class="order-status {{ commande.statut }}">
+                                {% if commande.statut == 'en_attente' %}
+                                    🕐 En attente
+                                {% elif commande.statut == 'livree' %}
+                                    ✓ Livrée
+                                {% elif commande.statut == 'annulee' %}
+                                    ✗ Annulée
+                                {% else %}
+                                    📦 {{ commande.statut|title }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="order-body">
+                            {% for item in commande.items.all %}
+                            <div class="order-product">
+                                <img src="{{ item.product.get_image_url }}" alt="{{ item.product.title }}" class="product-image">
+                                <div class="product-details">
+                                    <h4>{{ item.product.title }}</h4>
+                                    <p class="product-meta">Quantité: {{ item.quantity }} × {{ item.price|floatformat:0 }} F CFA</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="order-footer">
+                            <div class="order-payment">
+                                {% if commande.payment_method == 'wave' %}
+                                    Payé via Wave
+                                {% elif commande.payment_method == 'orange' %}
+                                    Payé via Orange Money
+                                {% elif commande.payment_method == 'cash' %}
+                                    Paiement à la livraison
+                                {% else %}
+                                    {{ commande.payment_method|title }}
+                                {% endif %}
+                            </div>
+                            <div class="order-total">
+                                <span class="total-label">Total</span>
+                                <span class="total-amount">{{ commande.total|floatformat:0 }} F CFA</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- Empty State -->
+                <div class="empty-orders">
+                    <div class="empty-icon">📦</div>
+                    <h3>Aucune commande pour le moment</h3>
+                    <p>Découvrez nos produits artisanaux et passez votre première commande !</p>
+                    <a href="{% url 'products' %}" class="shop-btn">
+                        🛍️ Découvrir la boutique
+                    </a>
+                </div>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</section>
+{% endblock %}

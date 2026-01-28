@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* ==================== ABOUT PAGE ==================== */
+    .about-hero {
+        background: linear-gradient(135deg, var(--light-blue), var(--light-gray));
+        padding: 5rem 0 4rem;
+        text-align: center;
+    }
+    
+    .about-hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1.5rem;
+    }
+    
+    .about-hero p {
+        font-size: 1.2rem;
+        color: var(--gray);
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.8;
+    }
+    
+    /* ==================== STORY SECTION ==================== */
+    .story-section {
+        padding: 5rem 0;
+    }
+    
+    .story-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+    
+    .story-image {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .story-image img {
+        width: 100%;
+        height: 600px;
+        object-fit: cover;
+    }
+    
+    .story-content {
+        padding: 2rem;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.5rem 1.25rem;
+        background: var(--light-blue);
+        color: var(--salmon);
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .story-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+    }
+    
+    .story-text {
+        color: var(--gray);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* ==================== VALUES SECTION ==================== */
+    .values-section {
+        padding: 5rem 0;
+        background: var(--light-gray);
+    }
+    
+    .values-header {
+        text-align: center;
+        max-width: 700px;
+        margin: 0 auto 4rem;
+    }
+    
+    .values-header h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1rem;
+    }
+    
+    .values-header p {
+        color: var(--gray);
+        font-size: 1.05rem;
+    }
+    
+    .values-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+    }
+    
+    .value-card {
+        background: var(--white);
+        padding: 2.5rem;
+        border-radius: 15px;
+        text-align: center;
+        transition: var(--transition);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .value-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .value-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--light-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .value-card h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 1rem;
+    }
+    
+    .value-card p {
+        color: var(--gray);
+        line-height: 1.7;
+    }
+    
+    /* ==================== ARTISANS SECTION ==================== */
+    .artisans-section {
+        padding: 5rem 0;
+    }
+    
+    .artisans-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+    
+    .artisans-image {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    .artisans-image img {
+        width: 100%;
+        height: 550px;
+        object-fit: cover;
+    }
+    
+    .artisans-content h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1.5rem;
+    }
+    
+    .artisans-text {
+        color: var(--gray);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        margin-bottom: 2rem;
+    }
+    
+    .discover-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 2rem;
+        background: var(--salmon);
+        color: var(--white);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: var(--transition);
+    }
+    
+    .discover-btn:hover {
+        background: var(--dark-salmon);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 139, 123, 0.3);
+    }
+    
+    /* ==================== CTA SECTION ==================== */
+    .cta-section {
+        padding: 5rem 0;
+        background: linear-gradient(135deg, var(--salmon), var(--primary-blue));
+        text-align: center;
+        color: var(--white);
+    }
+    
+    .cta-section h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+    }
+    
+    .cta-section p {
+        font-size: 1.1rem;
+        margin-bottom: 2.5rem;
+        opacity: 0.95;
+    }
+    
+    .cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 2.5rem;
+        background: var(--white);
+        color: var(--primary-blue);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: var(--transition);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .cta-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+        .story-container,
+        .artisans-container {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+        }
+        
+        .values-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .artisans-container {
+            direction: ltr;
+        }
+        
+        .artisans-container > *:first-child {
+            order: 2;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .about-hero h1 {
+            font-size: 2.5rem;
+        }
+        
+        .story-title,
+        .artisans-content h2,
+        .values-header h2 {
+            font-size: 2rem;
+        }
+        
+        .story-image img,
+        .artisans-image img {
+            height: 400px;
+        }
+    }
+</style>
+
+<section class="about-hero">
+    <div class="container">
+        <h1>Notre Histoire</h1>
+        <p>Mynia Boutique est plus qu'une simple boutique en ligne. C'est un pont entre les artisans ivoiriens et le monde entier.</p>
+    </div>
+</section>
+
+<section class="story-section">
+    <div class="container">
+        <div class="story-container">
+            <div class="story-image">
+                <img src="https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800" alt="Artisan au travail">
+            </div>
+            
+            <div class="story-content">
+                <span class="badge">Depuis 2020</span>
+                <h2 class="story-title">Une passion née de la tradition</h2>
+                
+                <p class="story-text">
+                    Mynia Boutique est née d'une rencontre entre tradition et modernité. Fondée en 2020 à Abidjan, notre entreprise s'est donnée pour mission de faire rayonner l'artisanat ivoirien au-delà des frontières.
+                </p>
+                
+                <p class="story-text">
+                    Chaque pièce que nous proposons raconte une histoire, celle d'un artisan qui perpétue un savoir-faire ancestral, transmis de génération en génération. Du tissage Baoulé à la sculpture Dan, en passant par la vannerie Sénoufo, nous célébrons la diversité culturelle de la Côte d'Ivoire.
+                </p>
+                
+                <p class="story-text">
+                    Notre équipe parcourt le pays pour dénicher les plus belles créations et travailler directement avec les artisans, garantissant une rémunération juste et la préservation des techniques traditionnelles.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="values-section">
+    <div class="container">
+        <div class="values-header">
+            <h2>Nos Valeurs</h2>
+            <p>Les principes qui guident chacune de nos actions</p>
+        </div>
+        
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon">👥</div>
+                <h3>Commerce Équitable</h3>
+                <p>Nous travaillons directement avec les artisans pour garantir une rémunération juste et des conditions de travail dignes.</p>
+            </div>
+            
+            <div class="value-card">
+                <div class="value-icon">❤️</div>
+                <h3>Authenticité</h3>
+                <p>Chaque pièce est unique, fabriquée à la main selon des techniques traditionnelles transmises depuis des siècles.</p>
+            </div>
+            
+            <div class="value-card">
+                <div class="value-icon">🌿</div>
+                <h3>Durabilité</h3>
+                <p>Nous privilégions les matériaux naturels et les pratiques respectueuses de l'environnement dans toute notre chaîne.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="artisans-section">
+    <div class="container">
+        <div class="artisans-container">
+            <div class="artisans-content">
+                <h2>Notre Communauté d'Artisans</h2>
+                
+                <p class="artisans-text">
+                    Mynia Boutique collabore avec plus de 50 artisans répartis dans toutes les régions de la Côte d'Ivoire. De Korhogo au nord à Grand-Bassam au sud, chaque région apporte sa touche unique à notre collection.
+                </p>
+                
+                <p class="artisans-text">
+                    Nous organisons régulièrement des ateliers de formation pour aider les artisans à développer de nouvelles compétences tout en préservant les techniques ancestrales. Notre objectif est de créer un écosystème durable où tradition et innovation coexistent harmonieusement.
+                </p>
+                
+                <a href="{% url 'products' %}" class="discover-btn">
+                    Découvrir leurs créations →
+                </a>
+            </div>
+            
+            <div class="artisans-image">
+                <img src="https://images.unsplash.com/photo-1610123598147-6b3b63e1f5a9?w=800" alt="Communauté d'artisans">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Rejoignez l'Aventure Mynia</h2>
+        <p>En choisissant Mynia Boutique, vous soutenez directement les artisans ivoiriens et contribuez à préserver un patrimoine culturel inestimable. Chaque achat fait la différence.</p>
+        <a href="{% url 'products' %}" class="cta-btn">
+            Explorer la Boutique →
+        </a>
+    </div>
+</section>
+{% endblock %}

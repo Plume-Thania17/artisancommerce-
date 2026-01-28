@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* ==================== CONTACT PAGE ==================== */
+    .contact-hero {
+        background: linear-gradient(135deg, var(--light-blue), var(--light-gray));
+        padding: 4rem 0 3rem;
+        text-align: center;
+    }
+    
+    .contact-hero h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1rem;
+    }
+    
+    .contact-hero p {
+        font-size: 1.1rem;
+        color: var(--gray);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .contact-section {
+        padding: 4rem 0;
+    }
+    
+    .contact-container {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 3rem;
+        align-items: start;
+    }
+    
+    /* ==================== INFORMATIONS SIDEBAR ==================== */
+    .contact-info {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 100px;
+    }
+    
+    .contact-info h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 2rem;
+    }
+    
+    .info-item {
+        display: flex;
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+    
+    .info-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--light-blue);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    
+    .info-content h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-content p {
+        color: var(--gray);
+        font-size: 14px;
+        line-height: 1.6;
+        margin: 0;
+    }
+    
+    /* ==================== CONTACT FORM ==================== */
+    .contact-form-wrapper {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 2.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 2rem;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark-gray);
+        font-size: 14px;
+    }
+    
+    .form-label span {
+        color: var(--salmon);
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.875rem 1.25rem;
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        font-size: 15px;
+        font-family: var(--font-main);
+        color: var(--black);
+        transition: var(--transition);
+    }
+    
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+    
+    .form-textarea {
+        resize: vertical;
+        min-height: 150px;
+    }
+    
+    .submit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.125rem 2.5rem;
+        background: var(--salmon);
+        color: var(--white);
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: var(--font-main);
+    }
+    
+    .submit-btn:hover {
+        background: var(--dark-salmon);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 139, 123, 0.3);
+    }
+    
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+        .contact-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .contact-info {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .contact-hero h1 {
+            font-size: 2rem;
+        }
+        
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="contact-hero">
+    <div class="container">
+        <h1>Contactez-nous</h1>
+        <p>Une question, une suggestion ou besoin d'aide ? Notre équipe est là pour vous accompagner.</p>
+    </div>
+</section>
+
+<section class="contact-section">
+    <div class="container">
+        <div class="contact-container">
+            <!-- Informations de contact -->
+            <div class="contact-info">
+                <h2>Informations</h2>
+                
+                <div class="info-item">
+                    <div class="info-icon">📍</div>
+                    <div class="info-content">
+                        <h3>Adresse</h3>
+                        <p>Cocody, Riviera 3<br>Abidjan, Côte d'Ivoire</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">📞</div>
+                    <div class="info-content">
+                        <h3>Téléphone</h3>
+                        <p>+225 07 00 00 00 00</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">✉️</div>
+                    <div class="info-content">
+                        <h3>Email</h3>
+                        <p>contact@mynia.ci</p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">🕐</div>
+                    <div class="info-content">
+                        <h3>Horaires</h3>
+                        <p>Lun - Ven: 9h - 18h<br>Sam: 9h - 14h</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulaire de contact -->
+            <div class="contact-form-wrapper">
+                <h2 class="form-title">Envoyez-nous un message</h2>
+                
+                <form method="POST" action="{% url 'contact' %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nom complet <span>*</span></label>
+                            <input type="text" name="nom" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Email <span>*</span></label>
+                            <input type="email" name="email" class="form-input" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label class="form-label">Sujet <span>*</span></label>
+                        <select name="sujet" class="form-select" required>
+                            <option value="">Sélectionnez un sujet</option>
+                            <option value="Information produit">Information produit</option>
+                            <option value="Commande">Question sur une commande</option>
+                            <option value="Livraison">Livraison</option>
+                            <option value="Partenariat">Partenariat artisan</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label class="form-label">Message <span>*</span></label>
+                        <textarea name="message" class="form-textarea" placeholder="Comment pouvons-nous vous aider ?" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        Envoyer le message ✉️
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Réutiliser les styles de base */
+    .profile-section {
+        padding: 3rem 0;
+        background: var(--light-gray);
+        min-height: calc(100vh - 200px);
+    }
+    
+    .profile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+    }
+    
+    .profile-welcome {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--salmon), var(--primary-blue));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--white);
+        text-transform: uppercase;
+    }
+    
+    .profile-greeting h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 0.25rem;
+    }
+    
+    .profile-greeting p {
+        color: var(--gray);
+        font-size: 1rem;
+    }
+    
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.75rem;
+        background: var(--white);
+        color: var(--dark-gray);
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .logout-btn:hover {
+        border-color: var(--salmon);
+        color: var(--salmon);
+    }
+    
+    .profile-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    
+    .profile-sidebar {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 100px;
+    }
+    
+    .sidebar-nav {
+        list-style: none;
+    }
+    
+    .sidebar-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        color: var(--dark-gray);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 15px;
+    }
+    
+    .sidebar-link:hover {
+        background: var(--light-blue);
+        color: var(--primary-blue);
+        transform: translateX(5px);
+    }
+    
+    .sidebar-link.active {
+        background: var(--salmon);
+        color: var(--white);
+    }
+    
+    .sidebar-icon {
+        font-size: 20px;
+    }
+    
+    .profile-content {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 2.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .content-header {
+        margin-bottom: 2rem;
+    }
+    
+    .content-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--black);
+    }
+    
+    /* ==================== SETTINGS LIST ==================== */
+    .settings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 0;
+        border-bottom: 1px solid var(--light-gray);
+    }
+    
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+    
+    .setting-info {
+        flex: 1;
+    }
+    
+    .setting-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 0.5rem;
+    }
+    
+    .setting-description {
+        font-size: 14px;
+        color: var(--gray);
+        line-height: 1.6;
+    }
+    
+    /* ==================== TOGGLE SWITCH ==================== */
+    .toggle-switch {
+        position: relative;
+        width: 60px;
+        height: 32px;
+        flex-shrink: 0;
+    }
+    
+    .toggle-input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #D1D5DB;
+        transition: 0.4s;
+        border-radius: 34px;
+    }
+    
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+    
+    .toggle-input:checked + .toggle-slider {
+        background: linear-gradient(135deg, var(--salmon), var(--primary-blue));
+    }
+    
+    .toggle-input:checked + .toggle-slider:before {
+        transform: translateX(28px);
+    }
+    
+    .toggle-input:focus + .toggle-slider {
+        box-shadow: 0 0 0 3px rgba(255, 139, 123, 0.1);
+    }
+    
+    /* ==================== DANGER ZONE ==================== */
+    .danger-zone {
+        margin-top: 3rem;
+        padding: 2rem;
+        background: #FFF5F5;
+        border: 2px solid #FEE;
+        border-radius: 15px;
+    }
+    
+    .danger-zone h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #DC3545;
+        margin-bottom: 1rem;
+    }
+    
+    .danger-zone p {
+        color: var(--gray);
+        margin-bottom: 1.5rem;
+        font-size: 14px;
+    }
+    
+    .danger-btn {
+        padding: 0.875rem 1.75rem;
+        background: var(--white);
+        color: #DC3545;
+        border: 2px solid #DC3545;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font-main);
+        font-size: 14px;
+    }
+    
+    .danger-btn:hover {
+        background: #DC3545;
+        color: var(--white);
+    }
+    
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-sidebar {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+</style>
+
+<section class="profile-section">
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-welcome">
+                <div class="profile-avatar">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                </div>
+                <div class="profile-greeting">
+                    <h1>Bonjour, {{ user.first_name|default:"Utilisateur" }}</h1>
+                    <p>Gérez votre compte et vos commandes</p>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                🚪 Déconnexion
+            </a>
+        </div>
+        
+        <!-- Profile Container -->
+        <div class="profile-container">
+            <!-- Sidebar -->
+            <aside class="profile-sidebar">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="{% url 'profile' %}" class="sidebar-link">
+                            <span class="sidebar-icon">👤</span>
+                            Mon Profil
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'adresse' %}" class="sidebar-link">
+                            <span class="sidebar-icon">📍</span>
+                            Mes Adresses
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'order' %}" class="sidebar-link">
+                            <span class="sidebar-icon">📦</span>
+                            Mes Commandes
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="{% url 'setting' %}" class="sidebar-link active">
+                            <span class="sidebar-icon">⚙️</span>
+                            Paramètres
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+            
+            <!-- Content Area -->
+            <main class="profile-content">
+                <div class="content-header">
+                    <h2 class="content-title">Paramètres du compte</h2>
+                </div>
+                
+                <!-- Settings List -->
+                <div class="settings-list">
+                    <!-- Notifications Email -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3 class="setting-title">Notifications par email</h3>
+                            <p class="setting-description">Recevoir les mises à jour sur mes commandes</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Notifications SMS -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3 class="setting-title">Notifications SMS</h3>
+                            <p class="setting-description">Recevoir les alertes de livraison par SMS</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Newsletter -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3 class="setting-title">Newsletter</h3>
+                            <p class="setting-description">Recevoir nos offres et nouveautés</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Promotions -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3 class="setting-title">Promotions personnalisées</h3>
+                            <p class="setting-description">Recevoir des offres adaptées à vos préférences</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Nouveautés produits -->
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h3 class="setting-title">Alertes nouveaux produits</h3>
+                            <p class="setting-description">Être informé des nouvelles créations artisanales</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Danger Zone -->
+                <div class="danger-zone">
+                    <h3>⚠️ Zone dangereuse</h3>
+                    <p>La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.</p>
+                    <button class="danger-btn" onclick="confirmDelete()">
+                        🗑️ Supprimer mon compte
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+</section>
+
+<script>
+// Gestion des toggles
+document.querySelectorAll('.toggle-input').forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        const settingTitle = this.closest('.setting-item').querySelector('.setting-title').textContent;
+        const isChecked = this.checked;
+        
+        console.log(`${settingTitle}: ${isChecked ? 'Activé' : 'Désactivé'}`);
+        
+        // Ici vous pouvez ajouter un appel AJAX pour sauvegarder la préférence
+        // Exemple:
+        // fetch('/api/settings/', {
+        //     method: 'POST',
+        //     body: JSON.stringify({ setting: settingTitle, value: isChecked })
+        // });
+    });
+});
+
+// Confirmation de suppression de compte
+function confirmDelete() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
+        if (confirm('Dernière confirmation : toutes vos données seront perdues. Continuer ?')) {
+            // Redirection vers la vue de suppression
+            window.location.href = '/profile/delete/';
+        }
+    }
+}
+</script>
+{% endblock %}

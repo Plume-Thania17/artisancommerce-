@@ -1,449 +1,696 @@
+# views.py - Version complète avec intégration Wave
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.conf import settings
-from .models import Categorie, Product, Commande, UserProfile, Favorite
+from .models import (Categorie, Product, Commande, UserProfile, 
+                    Favorite, ShippingAddress, ProductReview, ContactMessage)
 from django.core.paginator import Paginator
-import requests  
-import random
-import string
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import RegisterForm, LoginForm  # Import des nouveaux formulaires
-# Fonction pour générer un ID de commande aléatoire
+from .forms import RegisterForm, LoginForm
 import json
 from decimal import Decimal
-from django.http import JsonResponse
 from django.urls import reverse
+from django.utils import timezone
+from django.db.models import Q, Avg
+import hashlib
+import hmac
+from django.db import models
+from django.db.models import Sum
 
 
-
-
-
-def generate_order_id():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-
-# Fonction pour générer une référence client
-def generate_client_reference():
-    return 'CLIENT-' + ''.join(random.choices(string.digits, k=8))
-
-def index(request):
-    Product_object = Product.objects.all()
-    item_name = request.GET.get('item-name')
-    if item_name != '' and item_name is not None:
-        Product_object = Product.objects.filter(title__icontains=item_name)
-    paginator = Paginator(Product_object, 4)
-    page = request.GET.get('page')
-    Product_object = paginator.get_page(page)
-    return render(request, 'index.html', {'product_object': Product_object})
-
-def detail(request, myid):
-    product_object = Product.objects.get(id=myid)
-    is_favorite = False
-    if request.user.is_authenticated:
-        is_favorite = Favorite.objects.filter(user=request.user, product=product_object).exists()
-    return render(request, 'detail.html', {
-        'product': product_object,
-        'is_favorite': is_favorite
-    })
-# Nouvelle version de checkout avec gestion authentifiée
+# ==================== UTILITAIRES ====================
+@login_required
 def checkout(request):
-    if not request.user.is_authenticated:
-        return redirect(f'/login/?next={request.path}')
-    
     if request.method == "POST":
-        items = request.POST.get('items')
-        total = request.POST.get('total')
-        
-        # Utilisation des infos du profil connecté
-        com = Commande(
-            items=items,
-            total=total,
-            nom=request.user.get_full_name(),
-            email=request.user.email,
-            address=request.POST.get('address'),
-            ville=request.POST.get('ville'),
-            pays=request.POST.get('pays'),
-            zipcode=request.POST.get('zipcode'),
-            user=request.user  # Lier la commande à l'utilisateur
+        data = json.loads(request.body)
+        panier = data.get("panier", {})
+
+        commande = Commande.objects.create(
+            user=request.user,
+            payment_status="pending"
         )
-        com.save()
-        return redirect('confirmation')
-    
-    # Pré-remplir avec les infos utilisateur si disponible
-    try:
-        profile = request.user.profile
-        initial_data = {
-            'nom': request.user.get_full_name(),
-            'email': request.user.email,
-            'phone': profile.phone
-        }
-    except UserProfile.DoesNotExist:
-        initial_data = {}
-    
-    return render(request, 'checkout.html', {'initial_data': initial_data})
 
+        total = 0
+        for product_id, item in panier.items():
+            product = Product.objects.get(id=product_id)
+            total += item["quantity"] * item["price"]
 
+        commande.total = total
+        commande.save()
 
-def confirmation(request, order_id=None):
-    if not request.user.is_authenticated:
-        return redirect('login')
+        return JsonResponse({"success": True})
+
+def generate_wave_payment_link(amount, phone_number, order_id):
+    """
+    Génère un lien de paiement Wave simplifié
+    Note: Pour un vrai déploiement, utilisez l'API officielle Wave
+    """
+    # Pour le moment, génération d'un lien de paiement simple
+    # En production, remplacer par l'API Wave officielle
+    base_url = "https://pay.wave.com"
     
-    # Si order_id est fourni, récupérer cette commande spécifique
-    if order_id:
-        commande = get_object_or_404(Commande, id=order_id, user=request.user)
-    else:
-        # Sinon, récupérer la dernière commande de l'utilisateur
-        commande = Commande.objects.filter(user=request.user).order_by('-date_commande').first()
-        if not commande:
-            return redirect('home')
-    
-    context = {
-        'commande': commande,
-        'order_number': f"CMD-{commande.id:06d}",
-        'items': commande.items if isinstance(commande.items, list) else [],
-        'total': float(commande.total) + 2000,  # Ajout des frais de livraison
-        'shipping_cost': 2000,
-        'payment_method': dict(Commande.PAYMENT_METHODS).get(commande.payment_method, ''),
-        'payment_status': dict(Commande.PAYMENT_STATUS).get(commande.payment_status, '')
+    # Paramètres de paiement
+    params = {
+        'amount': int(amount),
+        'currency': 'XOF',
+        'phone': phone_number,
+        'reference': f'CMD-{order_id}',
+        'callback_url': f"{settings.SITE_URL}/payment/wave/callback/"
     }
     
-    return render(request, 'confirmation.html', context)
-
-@login_required
-def initiate_payment(request, method, order_id):
-    """
-    Vue unifiée pour initier les paiements Orange Money et Wave
-    """
-    commande = get_object_or_404(Commande, id=order_id, user=request.user)
+    # Construction du lien (simplifié pour démo)
+    payment_link = f"{base_url}/pay?amount={params['amount']}&phone={params['phone']}&ref={params['reference']}"
     
-    if method == 'orange':
-        return initiate_orange_payment(request, order_id)
-    elif method == 'wave':
-        return initiate_wave_payment(request, order_id)
-    else:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Méthode de paiement non supportée'
-        }, status=400)
+    return payment_link
 
+# ==================== VUES PUBLIQUES ====================
 
+def index(request):
+    """Page d'accueil avec produits vedettes"""
+    # Récupérer les produits avec pagination
+    product_list = Product.objects.filter(is_active=True).select_related('Categorie')
+    
+    # Recherche par nom
+    search_query = request.GET.get('search', '')
+    if search_query:
+        product_list = product_list.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(product_list, 8)
+    page_number = request.GET.get('page')
+    product_object = paginator.get_page(page_number)
+    
+    # Récupérer toutes les catégories pour le menu
+    categories = Categorie.objects.all()
+    
+    context = {
+        'product_object': product_object,
+        'categories': categories,
+        'search_query': search_query
+    }
+    
+    return render(request, 'index.html', context)
 
-def initiate_orange_payment(request, commande_id=None):
-    if request.method == 'POST':
-        amount = request.POST.get('amount')
-        # Vérification que les settings sont bien configurés
-        if not all([hasattr(settings, 'ORANGE_MERCHANT_KEY'), 
-                   hasattr(settings, 'ORANGE_API_TOKEN')]):
-            return JsonResponse({'status': 'error', 'message': 'Configuration Orange Money manquante'}, status=500)
-            
-        payload = {
-            'merchant_key': settings.ORANGE_MERCHANT_KEY,
-            'currency': 'XOF',
-            'order_id': generate_order_id(),
-            'amount': amount,
-            'return_url': getattr(settings, 'ORANGE_CALLBACK_URL', ''),
-            'cancel_url': getattr(settings, 'ORANGE_CANCEL_URL', ''),
-            'notif_url': getattr(settings, 'ORANGE_NOTIF_URL', ''),
-            'lang': 'fr'
-        }
+def detail(request, myid):
+    """Page détail d'un produit avec avis"""
+    product = get_object_or_404(Product, id=myid)
+    
+    # Vérifier si favori
+    is_favorite = False
+    if request.user.is_authenticated:
+        is_favorite = Favorite.objects.filter(
+            user=request.user, 
+            product=product
+        ).exists()
+    
+    # Calculer le pourcentage de réduction
+    discount_percent = product.get_discount_percent()
+    
+    # Récupérer les avis
+    reviews = ProductReview.objects.filter(product=product).select_related('user')
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+    
+    # Produits similaires
+    related_products = Product.objects.filter(
+        Categorie=product.Categorie,
+        is_active=True
+    ).exclude(id=myid)[:4]
+    
+    context = {
+        'product': product,
+        'is_favorite': is_favorite,
+        'discount_percent': discount_percent,
+        'reviews': reviews,
+        'avg_rating': round(avg_rating, 1),
+        'related_products': related_products
+    }
+    
+    return render(request, 'detail.html', context)
+
+def products(request):
+    """Page liste des produits avec filtres"""
+    # Base queryset
+    product_list = Product.objects.filter(is_active=True).select_related('Categorie')
+    
+    # Filtrage par catégorie
+    category_id = request.GET.get('category')
+    if category_id:
+        product_list = product_list.filter(Categorie_id=category_id)
+    
+    # Filtrage par recherche
+    search = request.GET.get('search', '')
+    if search:
+        product_list = product_list.filter(
+            Q(title__icontains=search) | 
+            Q(description__icontains=search)
+        )
+    
+    # Tri
+    sort_by = request.GET.get('sort', 'newest')
+    if sort_by == 'price-asc':
+        product_list = product_list.order_by('price')
+    elif sort_by == 'price-desc':
+        product_list = product_list.order_by('-price')
+    elif sort_by == 'name':
+        product_list = product_list.order_by('title')
+    else:  # newest
+        product_list = product_list.order_by('-date_ajout')
+    
+    # Pagination
+    paginator = Paginator(product_list, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Marquer les favoris
+    if request.user.is_authenticated:
+        favorite_ids = Favorite.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True)
         
-        try:
-            response = requests.post(
-                'https://api.orange.com/orange-money-webpay/dev/v1/webpayment',
-                json=payload,
-                headers={'Authorization': f'Bearer {settings.ORANGE_API_TOKEN}'},
-                timeout=30
-            )
-            response.raise_for_status()  # Lève une exception pour les codes 4XX/5XX
-            return JsonResponse(response.json())
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return JsonResponse({'status': 'error', 'message': 'Méthode non autorisée'}, status=405)
+        for product in page_obj:
+            product.is_favorite = product.id in favorite_ids
+    
+    # Catégories pour la sidebar
+    categories = Categorie.objects.all()
+    
+    context = {
+        'page_obj': page_obj,
+        'categories': categories,
+        'current_category': category_id,
+        'search_query': search
+    }
+    
+    return render(request, 'products.html', context)
 
-def initiate_wave_payment(request, commande_id=None):
-    if request.method == 'POST':
-        amount = request.POST.get('amount')
-        # Vérification de la configuration Wave
-        if not all([hasattr(settings, 'WAVE_API_KEY'), 
-                   hasattr(settings, 'WAVE_MERCHANT_ID')]):
-            return JsonResponse({'status': 'error', 'message': 'Configuration Wave manquante'}, status=500)
-            
-        payload = {
-            'amount': amount,
-            'currency': 'XOF',
-            'client_reference': generate_client_reference(),
-            'error_url': getattr(settings, 'WAVE_ERROR_URL', ''),
-            'success_url': getattr(settings, 'WAVE_SUCCESS_URL', '')
-        }
-        
-        try:
-            response = requests.post(
-                'https://api.wave.com/v1/checkout/sessions',
-                json=payload,
-                headers={
-                    'Authorization': f'Bearer {settings.WAVE_API_KEY}',
-                    'Content-Type': 'application/json'
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            return JsonResponse(response.json())
-        except requests.exceptions.RequestException as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return JsonResponse({'status': 'error', 'message': 'Méthode non autorisée'}, status=405)
-# Nouvelles vues d'authentification
+# ==================== AUTHENTIFICATION ====================
+
 def register(request):
+    """Inscription utilisateur"""
     if request.method == 'POST':
         form = RegisterForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save()
-            # Création automatique du profil
-            UserProfile.objects.create(
-                user=user,
-                phone=form.cleaned_data['phone'],
-                profile_picture=form.cleaned_data['profile_pic']
-            )
-            # Connexion automatique
-            login(request, user)
-            messages.success(request, "Inscription réussie !")
-            return redirect('home')
-    
+            try:
+                user = form.save()
+                login(request, user)
+                messages.success(request, "Bienvenue sur Mynia Boutique !")
+                return redirect('home')
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'inscription: {str(e)}")
         else:
-            print(form.errors)  # Debug
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
     else:
         form = RegisterForm()
+    
     return render(request, 'register.html', {'form': form})
 
 def user_login(request):
+    """Connexion utilisateur"""
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
+            
             user = authenticate(request, username=username, password=password)
+            
             if user is not None:
                 login(request, user)
-                # Récupérer le paramètre next du formulaire ou de l'URL
+                
+                # Redirection
                 next_url = request.POST.get('next', '') or request.GET.get('next', '')
                 if next_url:
                     return redirect(next_url)
-                else:
-                    return redirect('home')
+                
+                messages.success(request, f"Bienvenue {user.first_name or user.username} !")
+                return redirect('home')
             else:
                 messages.error(request, "Identifiants incorrects")
-        else:
-            # Afficher les erreurs de formulaire
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
     else:
         form = LoginForm()
     
     return render(request, 'login.html', {'form': form})
 
 def user_logout(request):
+    """Déconnexion"""
     logout(request)
+    messages.info(request, "Vous êtes déconnecté")
     return redirect('home')
+
+# ==================== PROFIL ====================
+
 @login_required
 def profile(request):
-    try:
-        # Essayez d'obtenir ou de créer le profil
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
-        return render(request, 'profile.html', {'user': request.user, 'profile': profile})
-    except Exception as e:
-        messages.error(request, f"Erreur lors de l'accès au profil: {str(e)}")
-        return redirect('home')
-@login_required
-def favorites(request):
-    # Récupérer les favoris de l'utilisateur connecté
-    user_favorites = Favorite.objects.filter(user=request.user).select_related('product')
-    return render(request, 'favorites.html', {'favorites': user_favorites})
-@login_required
-def add_favorite(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    Favorite.objects.get_or_create(user=request.user, product=product)
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
-
-@login_required
-def remove_favorite(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    Favorite.objects.filter(user=request.user, product=product).delete()
-    return redirect('favorites')
-
-
-@login_required
-def checkout(request):
-    if request.method == "POST":
-        try:
-            # Récupérer et valider les données du formulaire
-            payment_method = request.POST.get('payment_method')
-            if not payment_method or payment_method not in dict(Commande.PAYMENT_METHODS):
-                return JsonResponse({
-                    'status': 'error', 
-                    'message': 'Veuillez sélectionner un mode de paiement valide'
-                }, status=400)
-
-            # Récupérer le panier depuis localStorage via AJAX
-            try:
-                panier = json.loads(request.POST.get('items', '[]'))
-                if not panier:
-                    return JsonResponse({
-                        'status': 'error', 
-                        'message': 'Votre panier est vide'
-                    }, status=400)
-            except json.JSONDecodeError:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Format de panier invalide'
-                }, status=400)
-
-            # Convertir le panier en format structuré
-            items_list = []
-            total = Decimal(0)
-            
-            for item in panier:
-                try:
-                    item_total = Decimal(str(item.get('total', 0)))
-                    items_list.append({
-                        'id': str(item.get('id', '')),
-                        'product_id': int(item.get('id', 0)),  # Pour référence produit
-                        'name': str(item.get('name', '')),
-                        'quantity': int(item.get('quantity', 1)),
-                        'price': str(Decimal(str(item.get('price', 0)))),
-                        'total': str(item_total)
-                    })
-                    total += item_total
-                except (ValueError, TypeError) as e:
-                    continue  # Ignorer les items invalides
-
-            # Validation des données de livraison
-            required_fields = ['address', 'ville', 'zipcode']
-            missing_fields = [field for field in required_fields if not request.POST.get(field)]
-            if missing_fields:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'Champs obligatoires manquants: {", ".join(missing_fields)}'
-                }, status=400)
-
-            # Créer la commande
-            commande = Commande(
-                items=items_list,
-                total=total,
-                nom=f"{request.user.first_name} {request.user.last_name}".strip(),
-                email=request.user.email,
-                address=request.POST.get('address'),
-                ville=request.POST.get('ville'),
-                pays=request.POST.get('pays', 'Côte d\'Ivoire'),
-                zipcode=request.POST.get('zipcode'),
-                user=request.user,
-                payment_method=payment_method,
-                payment_status='pending'
-            )
-            commande.full_clean()  # Validation du modèle
-            commande.save()
-
-            # Réponse JSON standardisée
-            response_data = {
-                'status': 'success',
-                'order_id': commande.id,
-                'order_number': f"CMD-{commande.id:06d}",
-                'total': str(total + Decimal(2000))  # Inclut les frais de livraison
-            }
-
-            # Gestion des différents modes de paiement
-            if payment_method in ['orange', 'wave']:
-                response_data['payment_url'] = reverse('initiate_payment', kwargs={
-                    'method': payment_method,
-                    'order_id': commande.id
-                })
-            else:
-                response_data['redirect_url'] = reverse('confirmation', args=[commande.id])
-
-            return JsonResponse(response_data)
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error', 
-                'message': f"Erreur lors du traitement de la commande: {str(e)}"
-            }, status=500)
-
-    # GET request - afficher le formulaire
-    context = {}
-    if request.user.is_authenticated:
-        try:
-            profile = request.user.profile
-            context['initial_data'] = {
-                'nom': f"{request.user.first_name} {request.user.last_name}",
-                'email': request.user.email,
-                'address': profile.address,
-                'ville': profile.ville,
-                'pays': getattr(profile, 'pays', 'Côte d\'Ivoire'),
-                'zipcode': profile.zipcode,
-                'phone': profile.phone
-            }
-        except UserProfile.DoesNotExist:
-            context['initial_data'] = {
-                'nom': f"{request.user.first_name} {request.user.last_name}",
-                'email': request.user.email
-            }
+    """Page profil utilisateur"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
     
-    return render(request, 'checkout.html', context)
+    # Statistiques
+    total_orders = Commande.objects.filter(user=request.user).count()
+    total_spent = Commande.objects.filter(
+        user=request.user, 
+        payment_status='paid'
+    ).aggregate(total=models.Sum('total'))['total'] or 0
+    
+    context = {
+        'profile': profile,
+        'total_orders': total_orders,
+        'total_spent': total_spent
+    }
+    
+    return render(request, 'profile.html', context)
 
 @login_required
 def edit_profile(request):
-    try:
-        profile, created = UserProfile.objects.get_or_create(user=request.user)
-        
-        if request.method == 'POST':
-            # Mettre à jour les informations de l'utilisateur
-            user = request.user
-            user.first_name = request.POST.get('first_name', '')
-            user.last_name = request.POST.get('last_name', '')
-            user.email = request.POST.get('email', '')
-            user.save()
+    """Édition du profil"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            # Mise à jour User
+            request.user.first_name = request.POST.get('first_name', '')
+            request.user.last_name = request.POST.get('last_name', '')
+            request.user.email = request.POST.get('email', '')
+            request.user.save()
             
-            # Mettre à jour les informations du profil
+            # Mise à jour Profile
             profile.phone = request.POST.get('phone', '')
             profile.address = request.POST.get('address', '')
             profile.ville = request.POST.get('ville', '')
             profile.zipcode = request.POST.get('zipcode', '')
+            profile.date_naissance = request.POST.get('date_naissance') or None
             
-            # Traiter l'image de profil
             if 'profile_pic' in request.FILES:
                 profile.profile_pic = request.FILES['profile_pic']
             
             profile.save()
-            messages.success(request, "Profil mis à jour avec succès!")
+            
+            messages.success(request, "Profil mis à jour avec succès !")
             return redirect('profile')
+        except Exception as e:
+            messages.error(request, f"Erreur: {str(e)}")
+    
+    return render(request, 'edit_profile.html', {'profile': profile})
+
+# ==================== ADRESSES ====================
+
+@login_required
+def adresse(request):
+    """Page liste des adresses de livraison"""
+    addresses = ShippingAddress.objects.filter(user=request.user).order_by('-is_default', '-id')
+    
+    context = {
+        'addresses': addresses
+    }
+    
+    return render(request, 'adresse.html', context)
+
+@login_required
+def add_address(request):
+    if request.method == "POST":
+        # Définir par défaut si coché
+        if request.POST.get('is_default'):
+            ShippingAddress.objects.filter(
+                user=request.user,
+                is_default=True
+            ).update(is_default=False)
+
+        ShippingAddress.objects.create(
+            user=request.user,
+            nom_complet=request.POST['nom_complet'],
+            phone=request.POST['phone'],
+            address=request.POST['address'],
+            ville=request.POST['ville'],
+            address_type=request.POST['address_type'],
+            is_default=bool(request.POST.get('is_default'))
+        )
+
+        messages.success(request, "Adresse ajoutée avec succès !")
+        return redirect('adresse')
+
+    return render(request, 'add_address.html')
+
+@login_required
+def delete_address(request, address_id):
+    """Supprimer une adresse"""
+    address = get_object_or_404(ShippingAddress, id=address_id, user=request.user)
+    address.delete()
+    messages.success(request, "Adresse supprimée")
+    return redirect('adresse')
+
+@login_required
+def set_default_address(request, address_id):
+    ShippingAddress.objects.filter(user=request.user, is_default=True).update(is_default=False)
+    
+    address = get_object_or_404(
+        ShippingAddress,
+        id=address_id,
+        user=request.user
+    )
+    address.is_default = True
+    address.save()
+
+    messages.success(request, "Adresse définie par défaut")
+    return redirect('adresse')
+
+# ==================== FAVORIS ====================
+
+@login_required
+def favorites(request):
+    """Page favoris"""
+    user_favorites = Favorite.objects.filter(
+        user=request.user
+    ).select_related('product', 'product__Categorie')
+    
+    return render(request, 'favorites.html', {'favorites': user_favorites})
+
+@login_required
+def add_favorite(request, product_id):
+    """Ajouter aux favoris"""
+    product = get_object_or_404(Product, id=product_id)
+    Favorite.objects.get_or_create(user=request.user, product=product)
+    messages.success(request, f"{product.title} ajouté aux favoris")
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+@login_required
+def remove_favorite(request, product_id):
+    """Retirer des favoris"""
+    Favorite.objects.filter(
+        user=request.user, 
+        product_id=product_id
+    ).delete()
+    messages.info(request, "Produit retiré des favoris")
+    return redirect(request.META.get('HTTP_REFERER', 'favorites'))
+
+# ==================== COMMANDES ====================
+
+@login_required
+def order(request):
+    commandes = Commande.objects.filter(user=request.user).order_by('-date_commande')
+    return render(request, 'order.html', {'commandes': commandes})
+
+@login_required
+def order_detail(request, order_id):
+    """Détail d'une commande"""
+    order = get_object_or_404(Commande, id=order_id, user=request.user)
+    
+    context = {
+        'order': order,
+        'order_number': order.order_number,
+        'items': order.items if isinstance(order.items, list) else []
+    }
+    
+    return render(request, 'order_detail.html', context)
+
+# ==================== CHECKOUT & PAIEMENT ====================
+
+@login_required
+def checkout(request):
+    """Page panier"""
+    return render(request, 'checkout.html')
+
+@login_required
+def confirmation(request):
+    """Page sélection adresse et paiement"""
+    # Récupérer les adresses de l'utilisateur
+    addresses = ShippingAddress.objects.filter(user=request.user)
+    
+    # Adresse par défaut
+    default_address = addresses.filter(is_default=True).first()
+    
+    context = {
+        'addresses': addresses,
+        'default_address': default_address
+    }
+    
+    return render(request, 'confirmation.html', context)
+
+@login_required
+def process_order(request):
+    """Traitement de la commande et création"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Méthode non autorisée'}, status=405)
+    
+    try:
+        # Parser les données JSON
+        data = json.loads(request.body)
         
-        return render(request, 'edit_profile.html', {'user': request.user, 'profile': profile})
+        # Validation
+        if not data.get('items'):
+            return JsonResponse({'success': False, 'message': 'Panier vide'}, status=400)
+        
+        if not data.get('payment_method'):
+            return JsonResponse({'success': False, 'message': 'Méthode de paiement requise'}, status=400)
+        
+        # Calculer le total
+        items = data.get('items', [])
+        subtotal = Decimal(0)
+        
+        for item in items:
+            subtotal += Decimal(str(item.get('total', 0)))
+        
+        shipping_cost = Decimal('2000')  # Frais de livraison fixes
+        total = subtotal + shipping_cost
+        
+        # Créer la commande
+        commande = Commande.objects.create(
+            user=request.user,
+            items=items,
+            subtotal=subtotal,
+            shipping_cost=shipping_cost,
+            total=total,
+            nom=data.get('name', f"{request.user.first_name} {request.user.last_name}"),
+            email=request.user.email,
+            phone=data.get('phone', ''),
+            address=data.get('address', ''),
+            ville=data.get('ville', ''),
+            pays=data.get('pays', "Côte d'Ivoire"),
+            zipcode=data.get('zipcode', ''),
+            payment_method=data.get('payment_method'),
+            payment_status='pending'
+        )
+        
+        # Générer lien de paiement selon la méthode
+        payment_url = None
+        
+        if data.get('payment_method') == 'wave':
+            # Générer le lien Wave avec VOTRE numéro
+            payment_url = generate_wave_payment_link(
+                amount=float(total),
+                phone_number='22707687487',  # VOTRE NUMÉRO
+                order_id=commande.id
+            )
+        
+        elif data.get('payment_method') == 'orange':
+            # Lien Orange Money (à implémenter selon vos besoins)
+            payment_url = f"/payment/orange/{commande.id}/"
+        
+        # Réponse de succès
+        response_data = {
+            'success': True,
+            'order_id': commande.id,
+            'order_number': commande.order_number,
+            'total': str(total),
+            'redirect_url': reverse('order_success', args=[commande.id])
+        }
+        
+        if payment_url:
+            response_data['payment_url'] = payment_url
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Données invalides'}, status=400)
     except Exception as e:
-        messages.error(request, f"Erreur lors de l'édition du profil: {str(e)}")
-        return redirect('profile')
-def products(request):
-    product_list = Product.objects.all()
-    categories = Categorie.objects.all()  # Récupérer toutes les catégories
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+@login_required
+def order_success(request, order_id):
+    """Page de succès de commande"""
+    order = get_object_or_404(Commande, id=order_id, user=request.user)
     
-    # Filtrage par catégorie si le paramètre 'category' existe
-    category_id = request.GET.get('category')
-    if category_id:
-        product_list = product_list.filter(Categorie_id=category_id)
+    context = {
+        'order': order,
+        'order_number': order.order_number,
+        'items': order.items if isinstance(order.items, list) else [],
+        'total': order.total,
+        'shipping_cost': order.shipping_cost
+    }
     
-    # Pagination et gestion des favoris (votre code existant)
-    paginator = Paginator(product_list, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    return render(request, 'order_success.html', context)
+
+# ==================== CALLBACKS PAIEMENT ====================
+
+def wave_callback(request):
+    """Callback Wave pour confirmation de paiement"""
+    if request.method == 'POST':
+        try:
+            # Récupérer les données de Wave
+            data = json.loads(request.body)
+            
+            # Valider la signature (en production)
+            # validate_wave_signature(data)
+            
+            # Mettre à jour la commande
+            order_number = data.get('reference', '')
+            if order_number.startswith('CMD-'):
+                order_id = int(order_number.split('-')[1])
+                commande = Commande.objects.get(id=order_id)
+                
+                if data.get('status') == 'success':
+                    commande.payment_status = 'paid'
+                    commande.date_paiement = timezone.now()
+                    commande.payment_reference = data.get('transaction_id', '')
+                    commande.save()
+                    
+                    return JsonResponse({'status': 'success'})
+            
+            return JsonResponse({'status': 'error', 'message': 'Commande non trouvée'})
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
-    if request.user.is_authenticated:
-        favorite_product_ids = Favorite.objects.filter(user=request.user).values_list('product_id', flat=True)
-        for product in page_obj.object_list:
-            product.is_favorite = product.id in favorite_product_ids
+    return JsonResponse({'status': 'error'}, status=405)
+
+# ==================== PARAMÈTRES ====================
+
+@login_required
+def setting(request):
+    """Page paramètres"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
     
-    return render(request, 'products.html', {
-        'page_obj': page_obj,
-        'products': page_obj.object_list,
-        'categories': categories,  # Ajout des catégories au contexte
-        'user': request.user
-    })
+    if request.method == 'POST':
+        # Mise à jour des préférences
+        profile.newsletter = request.POST.get('newsletter') == 'on'
+        profile.notifications_email = request.POST.get('notifications_email') == 'on'
+        profile.notifications_sms = request.POST.get('notifications_sms') == 'on'
+        profile.save()
+        
+        messages.success(request, "Paramètres mis à jour")
+        return redirect('setting')
+    
+    return render(request, 'setting.html', {'profile': profile})
+
+# ==================== AVIS PRODUITS ====================
+
+@login_required
+def add_review(request, product_id):
+    """Ajouter un avis sur un produit"""
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=product_id)
+        
+        # Vérifier si l'utilisateur a déjà laissé un avis
+        existing_review = ProductReview.objects.filter(
+            user=request.user, 
+            product=product
+        ).first()
+        
+        rating = int(request.POST.get('rating', 5))
+        comment = request.POST.get('comment', '')
+        
+        if existing_review:
+            existing_review.rating = rating
+            existing_review.comment = comment
+            existing_review.save()
+            messages.success(request, "Avis mis à jour")
+        else:
+            ProductReview.objects.create(
+                user=request.user,
+                product=product,
+                rating=rating,
+                comment=comment
+            )
+            messages.success(request, "Avis ajouté avec succès")
+        
+        return redirect('detail', myid=product_id)
+    
+    return redirect('home')
+# ==================== PAGES STATIQUES ====================
+
+def about(request):
+    """Page À propos / Notre Histoire"""
+    categories = Categorie.objects.all()
+    
+    context = {
+        'categories': categories,
+    }
+    
+    return render(request, 'about.html', context)
+
+def contact(request):
+    """Page de contact avec formulaire"""
+    categories = Categorie.objects.all()
+    
+    if request.method == 'POST':
+        try:
+            # Créer le message de contact
+            ContactMessage.objects.create(
+                nom=request.POST.get('nom'),
+                email=request.POST.get('email'),
+                sujet=request.POST.get('sujet'),
+                message=request.POST.get('message')
+            )
+            
+            messages.success(request, "Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.")
+            return redirect('contact')
+            
+        except Exception as e:
+            messages.error(request, f"Erreur lors de l'envoi du message : {str(e)}")
+    
+    context = {
+        'categories': categories,
+    }
+    
+    return render(request, 'contact.html', context)
+# Ajoutez cette vue dans votre fichier views.py
+
+def search(request):
+    """Vue de recherche de produits"""
+    query = request.GET.get('q', '').strip()
+    categories = Categorie.objects.all()
+    
+    # Initialiser les résultats
+    products = Product.objects.filter(is_active=True).select_related('Categorie')
+    
+    # Filtrage par recherche
+    if query:
+        products = products.filter(
+            Q(title__icontains=query) | 
+            Q(description__icontains=query) |
+            Q(Categorie__name__icontains=query)
+        )
+    
+    # Filtrage par catégories
+    selected_categories = request.GET.get('categories', '').split(',')
+    selected_categories = [cat for cat in selected_categories if cat]
+    
+    if selected_categories:
+        products = products.filter(Categorie_id__in=selected_categories)
+    
+    # Tri
+    sort_by = request.GET.get('sort', 'newest')
+    if sort_by == 'price-asc':
+        products = products.order_by('price')
+    elif sort_by == 'price-desc':
+        products = products.order_by('-price')
+    elif sort_by == 'name':
+        products = products.order_by('title')
+    else:  # newest
+        products = products.order_by('-date_ajout')
+    
+    context = {
+        'query': query,
+        'products': products,
+        'products_count': products.count(),
+        'categories': categories,
+        'selected_categories': selected_categories,
+        'sort_by': sort_by,
+    }
+    
+    return render(request, 'search_results.html', context)

@@ -1,55 +1,477 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<div class="profile-edit-container">
-    <h2>Modifier mon profil</h2>
+<style>
+    /* Réutiliser les styles de profile.html */
+    .profile-section {
+        padding: 3rem 0;
+        background: var(--light-gray);
+        min-height: calc(100vh - 200px);
+    }
     
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+    .profile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+    }
+    
+    .profile-welcome {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--salmon), var(--primary-blue));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--white);
+        text-transform: uppercase;
+    }
+    
+    .profile-greeting h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 0.25rem;
+    }
+    
+    .profile-greeting p {
+        color: var(--gray);
+        font-size: 1rem;
+    }
+    
+    .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.75rem;
+        background: var(--white);
+        color: var(--dark-gray);
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .logout-btn:hover {
+        border-color: var(--salmon);
+        color: var(--salmon);
+    }
+    
+    .profile-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+    
+    .profile-sidebar {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        position: sticky;
+        top: 100px;
+    }
+    
+    .sidebar-nav {
+        list-style: none;
+    }
+    
+    .sidebar-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        color: var(--dark-gray);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 15px;
+    }
+    
+    .sidebar-link:hover {
+        background: var(--light-blue);
+        color: var(--primary-blue);
+        transform: translateX(5px);
+    }
+    
+    .sidebar-link.active {
+        background: var(--salmon);
+        color: var(--white);
+    }
+    
+    .sidebar-icon {
+        font-size: 20px;
+    }
+    
+    .profile-content {
+        background: var(--white);
+        border-radius: 15px;
+        padding: 2.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    .content-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid var(--light-gray);
+    }
+    
+    .content-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--black);
+    }
+    
+    /* ==================== FORM STYLES ==================== */
+    .profile-form {
+        max-width: 800px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dark-gray);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        font-size: 15px;
+        font-family: var(--font-main);
+        color: var(--black);
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+    
+    .form-input::placeholder {
+        color: var(--gray);
+    }
+    
+    /* Photo upload */
+    .photo-upload-group {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+    
+    .current-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--light-gray);
+    }
+    
+    .upload-area {
+        flex: 1;
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .file-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        background: var(--light-blue);
+        color: var(--primary-blue);
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .file-label:hover {
+        background: var(--primary-blue);
+        color: var(--white);
+    }
+    
+    .file-info {
+        margin-top: 0.5rem;
+        font-size: 13px;
+        color: var(--gray);
+    }
+    
+    /* Form actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid var(--light-gray);
+    }
+    
+    .btn-save {
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, var(--primary-blue), var(--salmon));
+        color: var(--white);
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font-main);
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    .btn-cancel {
+        padding: 1rem 2rem;
+        background: var(--white);
+        color: var(--dark-gray);
+        border: 2px solid var(--light-gray);
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font-main);
+    }
+    
+    .btn-cancel:hover {
+        border-color: var(--gray);
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
         
-        <div class="form-group">
-            <label for="first_name">Prénom:</label>
-            <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}">
+        .profile-sidebar {
+            position: static;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1.5rem;
+        }
+        
+        .photo-upload-group {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<section class="profile-section">
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-welcome">
+                <div class="profile-avatar">
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                </div>
+                <div class="profile-greeting">
+                    <h1>Bonjour, {{ user.first_name|default:"Utilisateur" }}</h1>
+                    <p>Gérez votre compte et vos commandes</p>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="logout-btn">
+                🚪 Déconnexion
+            </a>
         </div>
         
-        <div class="form-group">
-            <label for="last_name">Nom:</label>
-            <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}">
+        <!-- Profile Container -->
+        <div class="profile-container">
+            <!-- Sidebar -->
+            <aside class="profile-sidebar">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item">
+                        <a href="{% url 'profile' %}" class="sidebar-link active">
+                            <span class="sidebar-icon">👤</span>
+                            Mon Profil
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <span class="sidebar-icon">📍</span>
+                            Mes Adresses
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <span class="sidebar-icon">📦</span>
+                            Mes Commandes
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a href="#" class="sidebar-link">
+                            <span class="sidebar-icon">⚙️</span>
+                            Paramètres
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+            
+            <!-- Content Area -->
+            <main class="profile-content">
+                <div class="content-header">
+                    <h2 class="content-title">Modifier mon profil</h2>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data" class="profile-form">
+                    {% csrf_token %}
+                    
+                    <!-- Photo de profil -->
+                    <div class="form-group full-width">
+                        <label class="form-label">Photo de profil</label>
+                        <div class="photo-upload-group">
+                            {% if profile.profile_pic %}
+                                <img src="{{ profile.profile_pic.url }}" alt="Photo actuelle" class="current-photo">
+                            {% else %}
+                                <div class="current-photo" style="background: var(--light-blue); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div class="upload-area">
+                                <input type="file" id="profile_pic" name="profile_pic" class="file-input" accept="image/*">
+                                <label for="profile_pic" class="file-label">
+                                    📷 Choisir une photo
+                                </label>
+                                <div class="file-info">JPG, PNG ou GIF - Max 5MB</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Nom et Prénom -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">Prénom</label>
+                            <input type="text" id="first_name" name="first_name" class="form-input" value="{{ user.first_name }}" placeholder="Votre prénom">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Nom</label>
+                            <input type="text" id="last_name" name="last_name" class="form-input" value="{{ user.last_name }}" placeholder="Votre nom">
+                        </div>
+                    </div>
+                    
+                    <!-- Email et Téléphone -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-input" value="{{ user.email }}" placeholder="votre@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone" class="form-label">Téléphone</label>
+                            <input type="tel" id="phone" name="phone" class="form-input" value="{{ profile.phone }}" placeholder="+225 XX XX XX XX XX">
+                        </div>
+                    </div>
+                    
+                    <!-- Adresse -->
+                    <div class="form-group full-width">
+                        <label for="address" class="form-label">Adresse</label>
+                        <input type="text" id="address" name="address" class="form-input" value="{{ profile.address }}" placeholder="Rue, quartier">
+                    </div>
+                    
+                    <!-- Ville et Code postal -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ville" class="form-label">Ville</label>
+                            <input type="text" id="ville" name="ville" class="form-input" value="{{ profile.ville }}" placeholder="Abidjan">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="zipcode" class="form-label">Code postal</label>
+                            <input type="text" id="zipcode" name="zipcode" class="form-input" value="{{ profile.zipcode }}" placeholder="00225">
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-save">💾 Enregistrer les modifications</button>
+                        <a href="{% url 'profile' %}" class="btn-cancel">Annuler</a>
+                    </div>
+                </form>
+            </main>
         </div>
+    </div>
+</section>
+
+<script>
+// Prévisualisation de l'image
+document.getElementById('profile_pic').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.querySelector('.current-photo');
+            if (img.tagName === 'IMG') {
+                img.src = e.target.result;
+            } else {
+                const newImg = document.createElement('img');
+                newImg.src = e.target.result;
+                newImg.className = 'current-photo';
+                img.replaceWith(newImg);
+            }
+        }
+        reader.readAsDataURL(file);
         
-        <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="{{ user.email }}">
-        </div>
-        
-        <div class="form-group">
-            <label for="phone">Téléphone:</label>
-            <input type="text" id="phone" name="phone" value="{{ profile.phone }}">
-        </div>
-        
-        <div class="form-group">
-            <label for="address">Adresse:</label>
-            <input type="text" id="address" name="address" value="{{ profile.address }}">
-        </div>
-        
-        <div class="form-group">
-            <label for="ville">Ville:</label>
-            <input type="text" id="ville" name="ville" value="{{ profile.ville }}">
-        </div>
-        
-        <div class="form-group">
-            <label for="zipcode">Code postal:</label>
-            <input type="text" id="zipcode" name="zipcode" value="{{ profile.zipcode }}">
-        </div>
-        
-        <div class="form-group">
-            <label for="profile_pic">Photo de profil:</label>
-            {% if profile.profile_pic %}
-                <img src="{{ profile.profile_pic.url }}" alt="Photo actuelle" style="max-width: 100px;">
-            {% endif %}
-            <input type="file" id="profile_pic" name="profile_pic">
-        </div>
-        
-        <button type="submit" class="btn">Enregistrer les modifications</button>
-    </form>
-</div>
+        // Mise à jour du texte
+        const fileInfo = document.querySelector('.file-info');
+        fileInfo.textContent = file.name;
+    }
+});
+</script>
 {% endblock %}

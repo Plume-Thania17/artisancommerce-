@@ -1,75 +1,400 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="favorites-container">
-    <h2>Mes Favoris</h2>
-    {% if favorites %}
-        <div class="favorites-grid">
-            {% for fav in favorites %}
-                <div class="favorite-item">
-                    <a href="{% url 'detail' fav.product.id %}">
-                        <img src="{{ fav.product.image }}" alt="{{ fav.product.title }}">
-                        <h3>{{ fav.product.title }}</h3>
-                        <p>{{ fav.product.price }} XOF</p>
-                    </a>
-                    <form method="post" action="{% url 'remove_favorite' fav.product.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="remove-btn">Retirer des favoris</button>
-                    </form>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p>Vous n'avez aucun produit dans vos favoris.</p>
-    {% endif %}
-</div>
-
 <style>
-    .favorites-container {
-        padding: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
+    /* ==================== FAVORITES SECTION ==================== */
+    .favorites-section {
+        padding: 3rem 0;
+        background: var(--light-gray);
+        min-height: calc(100vh - 200px);
     }
     
+    .favorites-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+    }
+    
+    .favorites-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--black);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .favorites-count {
+        padding: 0.5rem 1rem;
+        background: var(--salmon);
+        color: var(--white);
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    /* ==================== FAVORITES GRID ==================== */
     .favorites-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 2rem;
-        margin-top: 2rem;
     }
     
-    .favorite-item {
-        background: #161616;
-        padding: 1rem;
-        border-radius: 8px;
-        transition: transform 0.3s;
+    .favorite-card {
+        background: var(--white);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
     }
     
-    .favorite-item:hover {
-        transform: translateY(-5px);
+    .favorite-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     }
     
-    .favorite-item img {
+    /* Image Container */
+    .favorite-image-container {
+        position: relative;
+        overflow: hidden;
+        height: 250px;
+    }
+    
+    .favorite-image {
         width: 100%;
-        height: 200px;
+        height: 100%;
         object-fit: cover;
-        border-radius: 5px;
+        transition: transform 0.5s ease;
     }
     
-    .remove-btn {
-        background: #ff6b6b;
-        color: #000;
+    .favorite-card:hover .favorite-image {
+        transform: scale(1.1);
+    }
+    
+    /* Overlay Actions */
+    .favorite-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.7));
+        display: flex;
+        align-items: flex-end;
+        padding: 1.5rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .favorite-card:hover .favorite-overlay {
+        opacity: 1;
+    }
+    
+    .view-product-btn {
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        background: var(--white);
+        color: var(--black);
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        text-align: center;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .view-product-btn:hover {
+        background: var(--primary-blue);
+        color: var(--white);
+        transform: scale(1.05);
+    }
+    
+    /* Product Info */
+    .favorite-info {
+        padding: 1.5rem;
+    }
+    
+    .favorite-product-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .favorite-price {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--salmon);
+        margin-bottom: 1rem;
+    }
+    
+    .favorite-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-add-cart {
+        flex: 1;
+        padding: 0.875rem 1rem;
+        background: var(--primary-blue);
+        color: var(--white);
         border: none;
-        padding: 8px 15px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-top: 10px;
+        border-radius: 10px;
         font-weight: 600;
-        transition: background 0.3s;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
     
-    .remove-btn:hover {
-        background: #ff3b3b;
+    .btn-add-cart:hover {
+        background: #4A80E2;
+        transform: translateY(-2px);
+    }
+    
+    .btn-remove {
+        padding: 0.875rem;
+        background: var(--white);
+        color: var(--salmon);
+        border: 2px solid var(--salmon);
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+    }
+    
+    .btn-remove:hover {
+        background: var(--salmon);
+        color: var(--white);
+        transform: scale(1.1) rotate(10deg);
+    }
+    
+    /* ==================== EMPTY STATE ==================== */
+    .empty-favorites {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: var(--white);
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 2rem;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .empty-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--black);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-text {
+        font-size: 1.1rem;
+        color: var(--gray);
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+    }
+    
+    .browse-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 2.5rem;
+        background: linear-gradient(135deg, var(--primary-blue), #5BA3FF);
+        color: var(--white);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    .browse-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(74, 144, 226, 0.4);
+    }
+    
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 768px) {
+        .favorites-title {
+            font-size: 2rem;
+        }
+        
+        .favorites-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .favorites-header {
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .favorites-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+        }
+        
+        .empty-title {
+            font-size: 1.5rem;
+        }
     }
 </style>
+
+<section class="favorites-section">
+    <div class="container">
+        <!-- Header -->
+        <div class="favorites-header">
+            <h1 class="favorites-title">
+                ❤️ Mes Favoris
+                {% if favorites %}
+                <span class="favorites-count">{{ favorites|length }}</span>
+                {% endif %}
+            </h1>
+        </div>
+        
+        {% if favorites %}
+            <!-- Favorites Grid -->
+            <div class="favorites-grid">
+                {% for fav in favorites %}
+                <div class="favorite-card">
+                    <!-- Image -->
+                    <div class="favorite-image-container">
+                        <img src="{{ fav.product.get_image_url }}" alt="{{ fav.product.title }}" class="favorite-image">
+                        
+                        <!-- Overlay -->
+                        <div class="favorite-overlay">
+                            <a href="{% url 'detail' fav.product.id %}" class="view-product-btn">
+                                👁️ Voir le produit
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Info -->
+                    <div class="favorite-info">
+                        <h3 class="favorite-product-title">{{ fav.product.title }}</h3>
+                        <p class="favorite-price">{{ fav.product.price|floatformat:0 }} F CFA</p>
+                        
+                        <!-- Actions -->
+                        <div class="favorite-actions">
+                            <button class="btn-add-cart" data-id="{{ fav.product.id }}" data-name="{{ fav.product.title }}" data-price="{{ fav.product.price }}">
+                                🛒 Panier
+                            </button>
+                            <form method="post" action="{% url 'remove_favorite' fav.product.id %}" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-remove" title="Retirer des favoris">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-favorites">
+                <div class="empty-icon">💔</div>
+                <h2 class="empty-title">Aucun favori pour le moment</h2>
+                <p class="empty-text">
+                    Explorez notre collection d'art africain authentique et ajoutez vos pièces préférées à vos favoris !
+                </p>
+                <a href="{% url 'products' %}" class="browse-btn">
+                    🎨 Découvrir la boutique
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Gestion de l'ajout au panier depuis les favoris
+    document.addEventListener('DOMContentLoaded', function() {
+        const addToCartButtons = document.querySelectorAll('.btn-add-cart');
+        
+        addToCartButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemId = this.dataset.id;
+                const itemName = this.dataset.name;
+                const itemPrice = parseFloat(this.dataset.price);
+                
+                // Récupérer le panier
+                let panier = JSON.parse(localStorage.getItem('Panier')) || {};
+                
+                // Ajouter ou mettre à jour
+                if (panier[itemId]) {
+                    panier[itemId][0] += 1;
+                    panier[itemId][2] += itemPrice;
+                } else {
+                    panier[itemId] = [1, itemName, itemPrice];
+                }
+                
+                // Sauvegarder
+                localStorage.setItem('Panier', JSON.stringify(panier));
+                
+                // Mettre à jour le compteur
+                updateCartCount();
+                
+                // Animation
+                const originalText = this.innerHTML;
+                this.innerHTML = '✓ Ajouté';
+                this.style.background = '#27ae60';
+                
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.style.background = '';
+                }, 2000);
+            });
+        });
+        
+        function updateCartCount() {
+            const panier = JSON.parse(localStorage.getItem('Panier')) || {};
+            let count = 0;
+            
+            for (let itemId in panier) {
+                count += panier[itemId][0];
+            }
+            
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+            }
+        }
+        
+        // Initialiser le compteur
+        updateCartCount();
+    });
+</script>
 {% endblock %}

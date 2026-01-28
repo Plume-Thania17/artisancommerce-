@@ -30,3 +30,17 @@ admin.site.register(Categorie,AdminCategorie)
 admin.site.register(Commande, AdminCommande)
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
+from .models import ContactMessage
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ['nom', 'email', 'sujet', 'date_envoi', 'is_read', 'is_replied']
+    list_filter = ['is_read', 'is_replied', 'date_envoi']
+    search_fields = ['nom', 'email', 'sujet', 'message']
+    readonly_fields = ['date_envoi']
+    
+    def mark_as_read(self, request, queryset):
+        queryset.update(is_read=True)
+    mark_as_read.short_description = "Marquer comme lu"
+    
+    actions = [mark_as_read]
